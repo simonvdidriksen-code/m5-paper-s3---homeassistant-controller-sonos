@@ -1,0 +1,55 @@
+{
+  "v": 3,
+  "attachments": {},
+  "boards": {
+    "Artboard-d3di.dc.html": {
+      "h": 600,
+      "page": "page-t52a6b",
+      "title": "Artboard 1",
+      "w": 800,
+      "x": 0,
+      "y": 0
+    },
+    "Main.dc.html": {
+      "h": 960,
+      "is_interactive": true,
+      "radius": 6,
+      "title": "M5Paper S3 · Areas, room lights + Sonos (540×960)",
+      "w": 540,
+      "x": 0,
+      "y": 0
+    }
+  },
+  "createdOnFiles": {
+    "at": "2026-10-11T12:00:00Z",
+    "v": 1
+  },
+  "designSystems": [],
+  "launch": {
+    "view": "canvas"
+  },
+  "notes": {
+    "spec": {
+      "fill": "gray",
+      "text": "M5Paper S3 — 4.7\" e-ink, 540×960 portrait (USB-C at the bottom), GT911 touch.\n\nPure black and white only (no grey), so every refresh uses the fast black/white mode (~0.4 s); a full flash clears ghosting now and then.\n\nBottom bar switches pages: Areas (lights) and Sonos.\n\nAreas: tap anywhere on a room's row to toggle its lights; hold it to open that room's lights (on/off, brightness bar: tap where you want it, 10 % steps) and, for Kitchen and Living Room, the emma scenes. Switch the board's \"startPage\" to \"room\" and pick a \"room\" to preview one. Sonos: tick rooms on the left; tap the rest of a speaker's row to play/pause (grouped speakers play/pause together). Playlists and volume (-5 / -2 / +2 / +5 %) act on the ticked rooms.\n\nFilled black = on / playing, white = off / paused, no button = unavailable. Every touch clicks the buzzer.\n\nPower off (\"Power off\" in Home Assistant, a 2 s hold on the battery at the top right, or an empty battery) leaves the \"Slukket\" screen on the e-ink — switch the board's \"screen\" setting to preview it. The side button's double-press can't show it: that button only reaches the power chip.",
+      "w": 300,
+      "x": 620,
+      "y": 0
+    }
+  },
+  "order": [
+    "Main.dc.html",
+    "Artboard-d3di.dc.html"
+  ],
+  "pages": [
+    {
+      "id": "page-1",
+      "name": "Page 1"
+    },
+    {
+      "id": "page-t52a6b",
+      "name": "Page 2"
+    }
+  ],
+  "title": "M5Paper S3 Areas Screen"
+}

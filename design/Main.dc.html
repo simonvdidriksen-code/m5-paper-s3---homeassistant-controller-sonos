@@ -1,0 +1,520 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<title>M5Paper S3 Areas og Sonos</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#333}a:hover{color:#000}
+button{font:inherit}
+.touch button,.touch .tz{outline:3px dashed #E8590C;outline-offset:-3px;box-shadow:inset 0 0 0 999px rgba(232,89,12,.14)}
+</style>
+</helmet>
+<div class="{{rootClass}}" style="position: relative; width: 540px; height: 960px; box-sizing: border-box; padding: 16px; background: #FFFFFF; color: #000000; font-family: 'Atkinson Hyperlegible', sans-serif; display: flex; flex-direction: column; overflow: hidden">
+<div style="height: 48px; flex: none; display: flex; align-items: center; justify-content: space-between; padding: 0 4px">
+<div style="display: flex; align-items: center; gap: 10px">
+<sc-if value="{{isAreas}}" hint-placeholder-val="{{ true }}">
+<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7"></path><path d="M5 10v10h5v-6h4v6h5V10"></path></svg>
+<h1 style="margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.2px">Areas</h1>
+</sc-if>
+<sc-if value="{{isSonos}}" hint-placeholder-val="{{ false }}">
+<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="4" width="8" height="16" rx="1.5"></rect><circle cx="6.5" cy="14" r="2.5"></circle><path d="M6.5 8.5h.01"></path><rect x="13.5" y="4" width="8" height="16" rx="1.5"></rect><circle cx="17.5" cy="14" r="2.5"></circle><path d="M17.5 8.5h.01"></path></svg>
+<h1 style="margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.2px">Sonos</h1>
+</sc-if>
+<sc-if value="{{isRoom}}" hint-placeholder-val="{{ false }}">
+<button type="button" onClick="{{showAreas}}" aria-label="Tilbage til Areas" style="height: 48px; border: 0; background: transparent; color: #000000; padding: 0 16px 0 0; display: flex; align-items: center; gap: 8px; font-size: 20px; font-weight: 700; cursor: pointer">
+<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"></path><path d="M11 6l-6 6 6 6"></path></svg>
+<span>Areas</span>
+</button>
+</sc-if>
+</div>
+<div class="tz" style="display: flex; align-items: center; gap: 4px; padding: 4px 6px; border-radius: 8px">
+<sc-if value="{{showUpdated}}" hint-placeholder-val="{{ true }}">
+<div style="font-size: 15px; color: #000000; padding-right: 12px">{{updatedText}}</div>
+</sc-if>
+<svg width="26" height="26" viewBox="0 0 24 24" role="img" aria-label="Batteri 35%"><rect x="7" y="4" width="10" height="18" rx="1.5" fill="none" stroke="#000000" stroke-width="1.8"></rect><rect x="10" y="2" width="4" height="2" fill="#000000"></rect><rect x="9" y="14.5" width="6" height="5.5" fill="#000000"></rect></svg>
+<div style="font-size: 20px; font-weight: 700">35%</div>
+</div>
+</div>
+<div style="flex: 1; min-height: 0; margin-top: 8px">
+<sc-if value="{{isAreas}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<sc-for list="{{rooms}}" as="r" hint-placeholder-count="12">
+<button type="button" onClick="{{r.toggle}}" onPointerDown="{{r.holdStart}}" onPointerUp="{{r.holdEnd}}" onPointerLeave="{{r.holdEnd}}" onPointerCancel="{{r.holdEnd}}" aria-label="{{r.label}}" aria-pressed="{{r.on}}" style="width: 100%; height: 61px; box-sizing: border-box; border: 2px solid #000000; border-radius: 10px; padding: 0 10px 0 16px; display: flex; align-items: center; gap: 14px; background: #FFFFFF; color: #000000; text-align: left; cursor: pointer">
+<div style="width: 28px; height: 28px; flex: none; display: flex; align-items: center; justify-content: center">
+<sc-if value="{{r.isFridge}}" hint-placeholder-val="{{ false }}"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2"></rect><path d="M5 10h14"></path><path d="M8.5 5v2.5"></path><path d="M8.5 13v4"></path></svg></sc-if>
+<sc-if value="{{r.isSofa}}" hint-placeholder-val="{{ false }}"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3"></path><path d="M2 13a2 2 0 0 1 4 0v2h12v-2a2 2 0 0 1 4 0v5H2z"></path><path d="M4 18v2"></path><path d="M20 18v2"></path></svg></sc-if>
+<sc-if value="{{r.isBed}}" hint-placeholder-val="{{ false }}"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 5v14"></path><path d="M2 15h20v4"></path><path d="M22 15v-3a3 3 0 0 0-3-3h-8v6"></path><circle cx="6.5" cy="11.5" r="2"></circle></svg></sc-if>
+<sc-if value="{{r.isToilet}}" hint-placeholder-val="{{ false }}"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="6" height="8" rx="1"></rect><path d="M4 11h16v1a6 6 0 0 1-6 6h-1l1 3H8l1-3.5A6 6 0 0 1 4 12z"></path></svg></sc-if>
+<sc-if value="{{r.isChair}}" hint-placeholder-val="{{ false }}"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="3" width="10" height="8" rx="2"></rect><path d="M5 13h14"></path><path d="M12 13v5"></path><path d="M7 21l5-3 5 3"></path></svg></sc-if>
+<sc-if value="{{r.isWasher}}" hint-placeholder-val="{{ false }}"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="2" width="16" height="20" rx="2"></rect><circle cx="12" cy="13" r="5"></circle><path d="M8 6h.01"></path><path d="M11 6h5"></path></svg></sc-if>
+<sc-if value="{{r.isGarage}}" hint-placeholder-val="{{ false }}"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21V9l9-5 9 5v12"></path><path d="M7 21v-9h10v9"></path><path d="M7 15h10"></path><path d="M7 18h10"></path></svg></sc-if>
+<sc-if value="{{r.isArea}}" hint-placeholder-val="{{ true }}"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="1"></rect><path d="M4 12l8-8"></path><path d="M4 20L20 4"></path><path d="M12 20l8-8"></path></svg></sc-if>
+</div>
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+<div style="font-size: 20px; font-weight: 700; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{r.name}}</div>
+<sc-if value="{{r.hasSub}}" hint-placeholder-val="{{ true }}">
+<div style="font-size: 16px; line-height: 1.2; color: #000000; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{r.sub}}</div>
+</sc-if>
+</div>
+<span aria-hidden="true" style="{{r.btnStyle}}">
+<sc-if value="{{r.on}}" hint-placeholder-val="{{ false }}">
+<svg width="26" height="26" viewBox="0 0 24 24" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.5a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5a6 6 0 0 0-4-10.5z"></path><path d="M9.5 18.5h5" fill="none"></path><path d="M10.5 21h3" fill="none"></path></svg>
+</sc-if>
+<sc-if value="{{r.off}}" hint-placeholder-val="{{ true }}">
+<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.5a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5a6 6 0 0 0-4-10.5z"></path><path d="M9.5 18.5h5"></path><path d="M10.5 21h3"></path><path d="M3 3l18 18"></path></svg>
+</sc-if>
+</span>
+</button>
+</sc-for>
+</div>
+</sc-if>
+<sc-if value="{{isSonos}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<sc-for list="{{speakers}}" as="s" hint-placeholder-count="4">
+<div style="width: 100%; height: 96px; box-sizing: border-box; border: 2px solid #000000; border-radius: 10px; display: flex; align-items: stretch; background: #FFFFFF; overflow: hidden">
+<button type="button" onClick="{{s.select}}" aria-label="{{s.selLabel}}" aria-pressed="{{s.sel}}" style="width: 64px; flex: none; border: 0; background: transparent; padding: 0; display: flex; align-items: center; justify-content: center; cursor: pointer">
+<span aria-hidden="true" style="{{s.boxStyle}}">
+<sc-if value="{{s.sel}}" hint-placeholder-val="{{ false }}">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>
+</sc-if>
+</span>
+</button>
+<button type="button" onClick="{{s.toggle}}" disabled="{{s.unavail}}" aria-label="{{s.label}}" aria-pressed="{{s.playing}}" style="flex: 1; min-width: 0; border: 0; background: transparent; color: #000000; padding: 0 10px 0 0; display: flex; align-items: center; gap: 12px; text-align: left; cursor: pointer">
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px">
+<div style="font-size: 20px; font-weight: 700; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{s.name}}</div>
+<sc-if value="{{s.hasNow}}" hint-placeholder-val="{{ true }}">
+<div style="font-size: 16px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{s.now}}</div>
+</sc-if>
+<div style="font-size: 16px; line-height: 1.2; color: #000000; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{s.status}}</div>
+</div>
+<span aria-hidden="true" style="{{s.btnStyle}}">
+<sc-if value="{{s.playing}}" hint-placeholder-val="{{ false }}">
+<svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="4.5" width="4" height="15" rx="1" fill="#FFFFFF"></rect><rect x="14" y="4.5" width="4" height="15" rx="1" fill="#FFFFFF"></rect></svg>
+</sc-if>
+<sc-if value="{{s.showPlay}}" hint-placeholder-val="{{ true }}">
+<svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l12.5-7.5z" fill="{{s.iconColor}}"></path></svg>
+</sc-if>
+</span>
+</button>
+</div>
+</sc-for>
+<div style="font-size: 20px; font-weight: 700; padding: 10px 4px 0">{{plHint}}</div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+<sc-for list="{{playlists}}" as="p" hint-placeholder-count="4">
+<button type="button" onClick="{{p.play}}" aria-label="{{p.label}}" style="min-width: 0; height: 60px; box-sizing: border-box; border: 2px solid #000000; border-radius: 10px; padding: 0 12px; display: flex; align-items: center; gap: 10px; background: #FFFFFF; color: #000000; text-align: left; cursor: pointer">
+<sc-if value="{{p.isRadio}}" hint-placeholder-val="{{ false }}"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="8" width="18" height="12" rx="2"></rect><path d="M6 8l10-5"></path><circle cx="8.5" cy="14" r="2.5"></circle><path d="M14 12h4"></path><path d="M14 16h4"></path></svg></sc-if>
+<sc-if value="{{p.isList}}" hint-placeholder-val="{{ true }}"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h12"></path><path d="M3 11h12"></path><path d="M3 16h7"></path><path d="M17 18V6l4 2"></path><circle cx="14.5" cy="18" r="2.5"></circle></svg></sc-if>
+<span style="flex: 1; min-width: 0; font-size: 20px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{p.name}}</span>
+</button>
+</sc-for>
+</div>
+<div style="height: 64px; box-sizing: border-box; border: 2px solid #000000; border-radius: 10px; padding: 0 8px; display: flex; align-items: center; justify-content: space-between">
+<button type="button" onClick="{{volDown5}}" aria-label="Skru 5 % ned på valgte rum" style="width: 80px; height: 48px; box-sizing: border-box; border: 2px solid #000000; border-radius: 10px; background: #FFFFFF; color: #000000; padding: 0; font-family: inherit; font-size: 26px; font-weight: 700; cursor: pointer">-5</button>
+<button type="button" onClick="{{volDown2}}" aria-label="Skru 2 % ned på valgte rum" style="width: 80px; height: 48px; box-sizing: border-box; border: 2px solid #000000; border-radius: 10px; background: #FFFFFF; color: #000000; padding: 0; font-family: inherit; font-size: 26px; font-weight: 700; cursor: pointer">-2</button>
+<div style="display: flex; flex-direction: column; align-items: center">
+<div style="font-size: 16px; color: #000000">Lydstyrke</div>
+<div style="font-size: 26px; font-weight: 700; line-height: 1.1">{{volText}}</div>
+</div>
+<button type="button" onClick="{{volUp2}}" aria-label="Skru 2 % op på valgte rum" style="width: 80px; height: 48px; box-sizing: border-box; border: 2px solid #000000; border-radius: 10px; background: #FFFFFF; color: #000000; padding: 0; font-family: inherit; font-size: 26px; font-weight: 700; cursor: pointer">+2</button>
+<button type="button" onClick="{{volUp5}}" aria-label="Skru 5 % op på valgte rum" style="width: 80px; height: 48px; box-sizing: border-box; border: 2px solid #000000; border-radius: 10px; background: #FFFFFF; color: #000000; padding: 0; font-family: inherit; font-size: 26px; font-weight: 700; cursor: pointer">+5</button>
+</div>
+<button type="button" onClick="{{combine}}" style="width: 100%; height: 60px; box-sizing: border-box; border: 2px solid #000000; border-radius: 10px; padding: 0 16px; display: flex; align-items: center; gap: 14px; background: #FFFFFF; color: #000000; text-align: left; cursor: pointer">
+<sc-if value="{{allGrouped}}" hint-placeholder-val="{{ true }}">
+<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 17H7a5 5 0 0 1 0-10h2"></path><path d="M15 7h2a5 5 0 0 1 4 8"></path><path d="M3 3l18 18"></path></svg>
+</sc-if>
+<sc-if value="{{notGrouped}}" hint-placeholder-val="{{ false }}">
+<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 17H7a5 5 0 0 1 0-10h2"></path><path d="M15 7h2a5 5 0 0 1 0 10h-2"></path><path d="M8 12h8"></path></svg>
+</sc-if>
+<span style="flex: 1; font-size: 20px; font-weight: 700">{{combineText}}</span>
+</button>
+</div>
+</sc-if>
+<sc-if value="{{isRoom}}" hint-placeholder-val="{{ false }}">
+<h2 style="margin: 0 4px 12px; font-size: 28px; font-weight: 700; letter-spacing: -0.2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{roomName}}</h2>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<sc-for list="{{lights}}" as="l" hint-placeholder-count="4">
+<div style="height: 120px; box-sizing: border-box; border: 2px solid #000000; border-radius: 10px; display: flex; flex-direction: column; overflow: hidden">
+<button type="button" onClick="{{l.toggle}}" aria-label="{{l.label}}" aria-pressed="{{l.on}}" style="height: 54px; flex: none; box-sizing: border-box; border: 0; background: #FFFFFF; color: #000000; padding: 6px 10px 0 16px; display: flex; align-items: center; gap: 14px; text-align: left; cursor: pointer">
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+<div style="font-size: 20px; font-weight: 700; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{l.name}}</div>
+<div style="font-size: 16px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{l.state}}</div>
+</div>
+<span aria-hidden="true" style="{{l.btnStyle}}">
+<sc-if value="{{l.on}}" hint-placeholder-val="{{ false }}">
+<svg width="26" height="26" viewBox="0 0 24 24" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.5a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5a6 6 0 0 0-4-10.5z"></path><path d="M9.5 18.5h5" fill="none"></path><path d="M10.5 21h3" fill="none"></path></svg>
+</sc-if>
+<sc-if value="{{l.off}}" hint-placeholder-val="{{ true }}">
+<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.5a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5a6 6 0 0 0-4-10.5z"></path><path d="M9.5 18.5h5"></path><path d="M10.5 21h3"></path><path d="M3 3l18 18"></path></svg>
+</sc-if>
+</span>
+</button>
+<button type="button" onClick="{{l.setBri}}" aria-label="{{l.briLabel}}" style="height: 62px; flex: none; box-sizing: border-box; border: 0; background: #FFFFFF; padding: 12px 10px 10px 16px; display: flex; cursor: pointer">
+<span aria-hidden="true" style="flex: 1; height: 40px; box-sizing: border-box; border: 2px solid #000000; border-radius: 8px; padding: 4px; background: #FFFFFF; display: flex">
+<span style="{{l.fillStyle}}"></span>
+</span>
+</button>
+</div>
+</sc-for>
+</div>
+<sc-if value="{{hasScenes}}" hint-placeholder-val="{{ true }}">
+<div style="font-size: 20px; font-weight: 700; padding: 16px 4px 8px">Scener</div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+<sc-for list="{{scenes}}" as="s" hint-placeholder-count="3">
+<button type="button" onClick="{{s.run}}" aria-label="{{s.label}}" style="{{s.style}}">{{s.name}}</button>
+</sc-for>
+</div>
+</sc-if>
+</sc-if>
+</div>
+<nav aria-label="Sider" style="height: 64px; flex: none; margin-top: 10px; display: flex; gap: 8px">
+<button type="button" onClick="{{showAreas}}" aria-pressed="{{areasTabOn}}" style="{{tabAreasStyle}}">
+<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7"></path><path d="M5 10v10h5v-6h4v6h5V10"></path></svg>
+<span>Areas</span>
+</button>
+<button type="button" onClick="{{showSonos}}" aria-pressed="{{isSonos}}" style="{{tabSonosStyle}}">
+<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="4" width="8" height="16" rx="1.5"></rect><circle cx="6.5" cy="14" r="2.5"></circle><path d="M6.5 8.5h.01"></path><rect x="13.5" y="4" width="8" height="16" rx="1.5"></rect><circle cx="17.5" cy="14" r="2.5"></circle><path d="M17.5 8.5h.01"></path></svg>
+<span>Sonos</span>
+</button>
+</nav>
+<sc-if value="{{isOff}}" hint-placeholder-val="{{ false }}">
+<div role="status" style="position: absolute; inset: 0; background: #FFFFFF; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 48px; text-align: center">
+<sc-if value="{{offPower}}" hint-placeholder-val="{{ true }}"><svg width="96" height="96" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 3v8"></path><path d="M6.3 6.8a8 8 0 1 0 11.4 0"></path></svg></sc-if>
+<sc-if value="{{offBattery}}" hint-placeholder-val="{{ false }}"><svg width="96" height="96" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="4" width="10" height="18" rx="1.5"></rect><path d="M10 2h4" stroke-linecap="round"></path><path d="M12 8.5v6" stroke-linecap="round" stroke-width="2.2"></path><path d="M12 18v.1" stroke-linecap="round" stroke-width="2.6"></path></svg></sc-if>
+<div style="font-size: 28px; font-weight: 700">{{offTitle}}</div>
+<div style="font-size: 20px; font-weight: 700; line-height: 1.3">{{offText}}</div>
+<div style="font-size: 16px">{{offInfo}}</div>
+</div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;showTouch&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true},&quot;showUpdated&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true},&quot;sleeping&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true},&quot;startPage&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;areas&quot;,&quot;sonos&quot;,&quot;room&quot;],&quot;default&quot;:&quot;areas&quot;},&quot;room&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;kitchen&quot;,&quot;living&quot;,&quot;bedroom&quot;,&quot;bath&quot;,&quot;office&quot;,&quot;utility&quot;,&quot;room1&quot;,&quot;room2&quot;,&quot;hall&quot;,&quot;garage&quot;,&quot;terrace&quot;,&quot;drive&quot;],&quot;default&quot;:&quot;living&quot;},&quot;screen&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;normal&quot;,&quot;off&quot;,&quot;batteryEmpty&quot;],&quot;default&quot;:&quot;normal&quot;},&quot;$preview&quot;:{&quot;width&quot;:540,&quot;height&quot;:960}}">
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      page: null,
+      room: null,
+      // Per light ("room:index"): on/off and brightness % (kept while off)
+      lights: {
+        'living:1': { on: true, pct: 40 },
+        'living:3': { on: true, pct: 70 },
+        'living:0': { on: false, pct: 50 },
+        'bath:0': { on: true, pct: 60 },
+        'office:0': { on: true, pct: 80 }
+      },
+      lit: null,
+      sel: { kitchen: true, living: true },
+      // Which group each speaker is in, and what each group plays
+      member: { kitchen: 'g1', living: 'g1', bath: 'g1', kontor: null },
+      groups: { g1: { playing: true, now: 'Desperado · / Annika', channel: 'DR P3' } },
+      vol: { kitchen: 0.25, living: 0.25, bath: 0.25 },
+      hint: null
+    };
+  }
+  componentWillUnmount() {
+    clearTimeout(this.holdT);
+    clearTimeout(this.litT);
+  }
+  renderVals() {
+    const onFill = this.props.onFill ?? '#000000';
+    const page = this.state.page ?? this.props.startPage ?? 'sonos';
+    const rooms = [
+      { id: 'kitchen', name: 'Kitchen', sub: '21.8 °C · 47%', icon: 'Fridge' },
+      { id: 'living', name: 'Living Room', sub: '22.8 °C · 47%', icon: 'Sofa' },
+      { id: 'bedroom', name: 'sove værelse', sub: '21.7 °C · 48.6% · 443 ppm', icon: 'Bed' },
+      { id: 'bath', name: 'badeværelse stort', sub: '22 °C · 58%', icon: 'Toilet' },
+      { id: 'office', name: 'kontor', sub: '23.1 °C · 39% · 597 ppm', icon: 'Chair' },
+      { id: 'utility', name: 'bryggers', sub: '21 °C · 51%', icon: 'Washer' },
+      { id: 'room1', name: 'værelse 1 vejen', sub: '20.2 °C · 52%', icon: 'Bed' },
+      { id: 'room2', name: 'værelse 2 have', sub: '20.9 °C · 53%', icon: 'Bed' },
+      { id: 'hall', name: 'entre', sub: '21.4 °C · 51%', icon: 'Area' },
+      { id: 'garage', name: 'garage', sub: '20.2 °C · 55%', icon: 'Garage' },
+      { id: 'terrace', name: 'terrasse baghave', sub: '', icon: 'Area' },
+      { id: 'drive', name: 'indkørsel', sub: '', icon: 'Area' }
+    ];
+    const speakers = [
+      { id: 'kitchen', name: 'kitchen' },
+      { id: 'living', name: 'Living Room' },
+      { id: 'bath', name: 'Bathroom' },
+      { id: 'kontor', name: 'kontor', unavailable: true }
+    ];
+    const playlists = [
+      { name: 'epaper playlist 1', now: 'epaper playlist 1', channel: 'Spotify' },
+      { name: 'epaper playlist 2', now: 'epaper playlist 2', channel: 'Spotify' },
+      { name: 'epaper playlist 3', now: 'epaper playlist 3', channel: 'Spotify' },
+      { name: 'DR P3', now: 'DR P3', channel: '', radio: true }
+    ];
+    const { member, groups, sel, vol } = this.state;
+    const avail = speakers.filter((s) => !s.unavailable);
+    const groupOf = (id) => member[id];
+    const size = (g) => avail.filter((s) => member[s.id] === g).length;
+    const allGrouped = avail.length >= 2 && avail.every((s) => member[s.id] && member[s.id] === member[avail[0].id]);
+    const iconFlags = (icon) => {
+      const flags = {};
+      ['Fridge', 'Sofa', 'Bed', 'Toilet', 'Chair', 'Washer', 'Garage', 'Area'].forEach((k) => { flags['is' + k] = icon === k; });
+      return flags;
+    };
+    const base = 'flex: none; box-sizing: border-box; border-radius: 10px; display: flex; align-items: center; justify-content: center; ';
+    const tab = (on) => 'flex: 1; height: 64px; box-sizing: border-box; border: 2px solid ' + (on ? onFill : '#000000') + '; border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 20px; font-weight: 700; cursor: pointer; padding: 0; '
+      + (on ? 'background: ' + onFill + '; color: #FFFFFF;' : 'background: #FFFFFF; color: #000000;');
+
+    // ---- Sonos actions (same rules as the firmware)
+    const togglePlay = (id) => this.setState((st) => {
+      const g = st.member[id];
+      if (!g) return null;
+      return { groups: { ...st.groups, [g]: { ...st.groups[g], playing: !st.groups[g].playing } } };
+    });
+    const stepVolume = (delta) => this.setState((st) => {
+      const picked = avail.filter((s) => st.sel[s.id]).map((s) => s.id);
+      if (picked.length === 0) return { hint: 'Vælg mindst ét rum ovenfor' };
+      const vol2 = { ...st.vol };
+      picked.forEach((id) => {
+        vol2[id] = Math.max(0, Math.min(1, Math.round((vol2[id] ?? 0) * 100 + delta) / 100));
+      });
+      return { vol: vol2, hint: null };
+    });
+    const ticked = avail.filter((s) => sel[s.id] && vol[s.id] !== undefined);
+    const volText = ticked.length
+      ? Math.round(ticked.reduce((a, s) => a + vol[s.id], 0) / ticked.length * 100) + ' %'
+      : '--';
+    const playPlaylist = (pl) => this.setState((st) => {
+      const picked = avail.filter((s) => st.sel[s.id]).map((s) => s.id);
+      if (picked.length === 0) return { hint: 'Vælg mindst ét rum ovenfor' };
+      const gid = 'p' + Date.now();
+      const touched = new Set(picked.map((id) => st.member[id]).filter(Boolean));
+      const member2 = { ...st.member };
+      const groups2 = { ...st.groups };
+      avail.forEach((s) => {
+        if (picked.includes(s.id)) member2[s.id] = gid;
+        else if (touched.has(st.member[s.id])) {
+          // split off: stops, on its own
+          const solo = 'solo-' + s.id;
+          member2[s.id] = solo;
+          groups2[solo] = { playing: false, now: '', channel: '' };
+        }
+      });
+      groups2[gid] = { playing: true, now: pl.now, channel: pl.channel };
+      return { member: member2, groups: groups2, hint: null };
+    });
+    const combine = () => this.setState((st) => {
+      const member2 = { ...st.member };
+      const groups2 = { ...st.groups };
+      if (allGrouped) {
+        // split: the first speaker keeps the music, the rest stop
+        avail.slice(1).forEach((s) => {
+          const solo = 'solo-' + s.id;
+          member2[s.id] = solo;
+          groups2[solo] = { playing: false, now: '', channel: '' };
+        });
+      } else {
+        const lead = avail.find((s) => st.groups[st.member[s.id]]?.playing) ?? avail[0];
+        const g = st.member[lead.id];
+        avail.forEach((s) => { member2[s.id] = g; });
+      }
+      return { member: member2, groups: groups2 };
+    });
+
+    // ---- One room's lights (hold a room row), as in the firmware
+    const roomLights = {
+      kitchen: ['Køkken spots', 'Spisebord køkken'],
+      living: ['Stue lights effective', 'Stue bord lampe', 'Stue gulv lampe', 'Stander lampe'],
+      bedroom: ['Soveværelse leklint', 'Soveværelse loft lampe White', 'Soveværelse loft lampe Rgb'],
+      bath: ['Badeværelse stort spots'],
+      office: ['Kontor loft lampe White', 'Kontor loft lampe Rgb'],
+      utility: ['Bryggers loft'],
+      room1: ['Værelse 1 vejen pære', 'Værelse 1 vejen bord lampe'],
+      room2: ['Værelse 2 haven pære'],
+      hall: ['Entre', 'Entre spots'],
+      garage: ['Garage', 'Garage paneler'],
+      terrace: ['Lys udhæng tresse'],
+      drive: ['Lys udhæng indkørsel']
+    };
+    // Scenes from the emma dashboard's room pages
+    const roomScenes = {
+      kitchen: ['Køkken 50/50', 'Aftensmad', 'Køkken morgen'],
+      living: ['Normal stue', 'Hygge', 'Stue amme scene']
+    };
+    const lights = this.state.lights;
+    const anyOn = (id) => (roomLights[id] ?? []).some((_, i) => lights[id + ':' + i]?.on);
+    const roomId = this.state.room ?? this.props.room ?? 'living';
+    const room = rooms.find((r) => r.id === roomId) ?? rooms[1];
+    const bulbBtn = (on) => base + 'width: 72px; height: 48px; padding: 0; cursor: pointer; ' + (on
+      ? 'background: ' + onFill + '; border: 2px solid ' + onFill + ';'
+      : 'background: #FFFFFF; border: 2px solid #000000;');
+    const setLight = (key, patch) => this.setState((st) => ({ lights: { ...st.lights, [key]: { ...(st.lights[key] ?? { on: false, pct: null }), ...patch } } }));
+
+    // Power-off screen (left on the e-ink while the device is off)
+    const screen = this.props.screen ?? 'normal';
+    const flat = screen === 'batteryEmpty';
+
+    return {
+      // Touch areas outlined (orange dashes) in the design only
+      rootClass: (this.props.showTouch ?? true) ? 'touch' : '',
+      isOff: screen !== 'normal',
+      offPower: screen === 'off',
+      offBattery: flat,
+      offTitle: flat ? 'Batteriet er fladt' : 'Slukket',
+      offText: flat
+        ? 'Sæt USB-C i for at oplade, og tryk så på knappen på siden for at tænde.'
+        : 'Tryk på knappen på siden for at tænde.',
+      offInfo: 'Slukket kl. 14:32 · batteri ' + (flat ? '0' : '35') + ' %',
+      showUpdated: this.props.showUpdated ?? true,
+      updatedText: (this.props.sleeping ?? false) ? 'Sover · opdateret 14:32' : 'Opdateret 14:32',
+      isAreas: page === 'areas',
+      isSonos: page === 'sonos',
+      isRoom: page === 'room',
+      areasTabOn: page !== 'sonos',
+      showAreas: () => this.setState({ page: 'areas' }),
+      showSonos: () => this.setState({ page: 'sonos' }),
+      tabAreasStyle: tab(page !== 'sonos'),
+      tabSonosStyle: tab(page === 'sonos'),
+      roomName: room.name,
+      lights: (roomLights[room.id] ?? []).map((name, i) => {
+        const key = room.id + ':' + i;
+        const l = lights[key] ?? { on: false, pct: null };
+        const pct = l.pct ?? 0;
+        return {
+          name,
+          on: !!l.on,
+          off: !l.on,
+          state: l.on ? (pct ? 'Tændt · ' + pct + ' %' : 'Tændt') : 'Slukket',
+          label: (l.on ? 'Sluk ' : 'Tænd ') + name,
+          briLabel: 'Lysstyrke for ' + name + ': ' + (l.on ? pct + ' %' : 'slukket') + '. Tryk hvor den skal stå.',
+          btnStyle: bulbBtn(!!l.on),
+          fillStyle: 'display: block; height: 100%; border-radius: 4px; background: ' + onFill + '; width: ' + (l.on ? pct : 0) + '%;',
+          toggle: () => setLight(key, { on: !l.on }),
+          // Where you tap along the bar sets it, in 10 % steps; the margin
+          // around the bar counts too (keyboard: next step up)
+          setBri: (e) => {
+            let level;
+            if (e && e.detail > 0 && e.currentTarget) {
+              const box = (e.currentTarget.firstElementChild ?? e.currentTarget).getBoundingClientRect();
+              level = Math.ceil((e.clientX - box.left) / Math.max(1, box.width) * 10);
+            } else {
+              level = (l.on ? Math.round(pct / 10) : 0) % 10 + 1;
+            }
+            setLight(key, { on: true, pct: Math.max(1, Math.min(10, level)) * 10 });
+          }
+        };
+      }),
+      hasScenes: !!roomScenes[room.id],
+      scenes: (roomScenes[room.id] ?? []).map((name) => {
+        const lit = this.state.lit === name;
+        return {
+          name,
+          label: 'Aktivér scenen ' + name,
+          style: 'min-width: 0; height: 56px; box-sizing: border-box; border: 2px solid #000000; border-radius: 10px; padding: 0 10px; font-size: 20px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; '
+            + (lit ? 'background: ' + onFill + '; color: #FFFFFF;' : 'background: #FFFFFF; color: #000000;'),
+          // Black for 2 s after a tap, like the panel
+          run: () => {
+            clearTimeout(this.litT);
+            this.setState({ lit: name });
+            this.litT = setTimeout(() => this.setState({ lit: null }), 2000);
+          }
+        };
+      }),
+      rooms: rooms.map((r) => {
+        const on = anyOn(r.id);
+        return {
+          ...r,
+          ...iconFlags(r.icon),
+          hasSub: r.sub !== '',
+          on,
+          off: !on,
+          label: (on ? 'Sluk lys i ' : 'Tænd lys i ') + r.name,
+          btnStyle: base + 'width: 72px; height: 48px; ' + (on
+            ? 'background: ' + onFill + '; border: 2px solid ' + onFill + ';'
+            : 'background: #FFFFFF; border: 2px solid #000000;'),
+          // Tap: any light on -> all off, else all on. A hold opens the room
+          // instead (the tap after a hold is swallowed).
+          toggle: () => {
+            if (this.held) { this.held = false; return; }
+            this.setState((st) => {
+              const names = roomLights[r.id] ?? [];
+              const was = names.some((_, i) => st.lights[r.id + ':' + i]?.on);
+              const l2 = { ...st.lights };
+              names.forEach((_, i) => {
+                const k = r.id + ':' + i;
+                l2[k] = { pct: null, ...l2[k], on: !was };
+              });
+              return { lights: l2 };
+            });
+          },
+          holdStart: () => {
+            clearTimeout(this.holdT);
+            this.held = false;
+            this.holdT = setTimeout(() => {
+              this.held = true;
+              this.setState({ page: 'room', room: r.id, lit: null });
+            }, 600);
+          },
+          holdEnd: () => clearTimeout(this.holdT)
+        };
+      }),
+      speakers: speakers.map((s) => {
+        const unavail = !!s.unavailable;
+        const g = groupOf(s.id);
+        const grp = g ? groups[g] : null;
+        const playing = !unavail && !!grp?.playing;
+        const loaded = !unavail && !!grp?.now;
+        const n = g ? size(g) : 0;
+        const isSel = !!sel[s.id];
+        let status = 'Ikke tilgængelig';
+        if (!unavail) {
+          status = playing ? 'Afspiller' : (loaded ? 'Pause' : 'Klar');
+          if (vol[s.id] !== undefined) status += ' · ' + Math.round(vol[s.id] * 100) + ' %';
+          if (loaded && grp.channel) status += ' · ' + grp.channel;
+          if (n > 1) status += ' · gruppe på ' + n;
+        }
+        return {
+          ...s,
+          unavail,
+          playing,
+          // black/white only: an unavailable speaker shows no button at all
+          showPlay: !playing && !unavail,
+          sel: isSel,
+          hasNow: loaded,
+          now: loaded ? grp.now : '',
+          status,
+          label: unavail ? s.name + ' er ikke tilgængelig' : (playing ? 'Sæt ' + s.name + ' på pause' : 'Afspil ' + s.name),
+          selLabel: (isSel ? 'Fravælg ' : 'Vælg ') + s.name + ' til playlister',
+          iconColor: '#000000',
+          boxStyle: 'width: 32px; height: 32px; box-sizing: border-box; border-radius: 6px; display: flex; align-items: center; justify-content: center; border: ' + (unavail ? '1px' : '2px') + ' solid #000000; background: ' + (isSel ? onFill : '#FFFFFF') + ';',
+          btnStyle: base + 'width: 72px; height: 56px; ' + (playing
+            ? 'background: ' + onFill + '; border: 2px solid ' + onFill + ';'
+            : 'background: #FFFFFF; border: ' + (unavail ? '0' : '2px solid #000000') + ';'),
+          select: () => this.setState((st) => ({ sel: { ...st.sel, [s.id]: !st.sel[s.id] }, hint: null })),
+          toggle: () => { if (!unavail) togglePlay(s.id); }
+        };
+      }),
+      plHint: this.state.hint ?? 'Afspil på valgte rum',
+      playlists: playlists.map((pl) => ({
+        name: pl.name,
+        isRadio: !!pl.radio,
+        isList: !pl.radio,
+        label: 'Afspil ' + pl.name + ' på valgte rum',
+        play: () => playPlaylist(pl)
+      })),
+      volText,
+      volDown5: () => stepVolume(-5),
+      volDown2: () => stepVolume(-2),
+      volUp2: () => stepVolume(2),
+      volUp5: () => stepVolume(5),
+      allGrouped,
+      notGrouped: !allGrouped,
+      combineText: allGrouped ? 'Opdel alle zoner' : 'Saml alle zoner',
+      combine
+    };
+  }
+}
+</script>
+</body>
+</html>

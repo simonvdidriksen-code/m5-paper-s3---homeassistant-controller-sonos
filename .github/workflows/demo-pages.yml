@@ -1,0 +1,22 @@
+# Publishes the clickable demo (docs/) to the gh-pages branch, which GitHub
+# Pages serves at https://<user>.github.io/<repo>/
+name: Demo to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths: ["docs/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs
