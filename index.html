@@ -1,0 +1,592 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M5Paper S3 Panel Demo</title>
+<meta name="description" content="Clickable demo of an M5Paper S3 e-ink control panel for Home Assistant: room lights, scenes and Sonos.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #ECEAE4;
+  --card: #FFFFFF;
+  --ink: #1B1B1A;
+  --muted: #5F5D57;
+  --line: #D4D1C8;
+  --accent: #E8590C;
+  --bezel: #2A2A29;
+  --bezel-edge: #444442;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #171716;
+    --card: #222221;
+    --ink: #EDEBE6;
+    --muted: #A7A49C;
+    --line: #3A3936;
+    --bezel: #0E0E0E;
+    --bezel-edge: #3A3A38;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #171716;
+  --card: #222221;
+  --ink: #EDEBE6;
+  --muted: #A7A49C;
+  --line: #3A3936;
+  --bezel: #0E0E0E;
+  --bezel-edge: #3A3A38;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Atkinson Hyperlegible', system-ui, sans-serif;
+  line-height: 1.45;
+}
+a { color: inherit; }
+.page {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 32px 16px 48px;
+  display: grid;
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+  grid-template-areas: "device intro" "device side";
+  grid-template-rows: auto 1fr;
+  column-gap: 40px;
+  align-items: start;
+}
+.intro { grid-area: intro; }
+.device-wrap { grid-area: device; }
+.side { grid-area: side; }
+@media (max-width: 860px) {
+  .page { grid-template-columns: minmax(0, 1fr); grid-template-areas: "intro" "device" "side"; grid-template-rows: auto; row-gap: 20px; padding-top: 20px; }
+}
+
+/* ---- Device: the 540 x 960 e-ink screen in an M5Paper-like bezel, scaled to fit */
+.device-wrap { display: flex; justify-content: center; }
+.device {
+  background: var(--bezel);
+  border: 1px solid var(--bezel-edge);
+  border-radius: 28px;
+  padding: 22px 18px 34px;
+  box-shadow: 0 18px 40px rgba(0,0,0,.18);
+}
+.screen-box { position: relative; overflow: hidden; border-radius: 4px; background: #fff; }
+.screen {
+  position: absolute; top: 0; left: 0;
+  width: 540px; height: 960px;
+  transform-origin: 0 0;
+}
+
+/* ---- Side panel */
+h1 { font-size: 30px; line-height: 1.15; margin: 0 0 8px; letter-spacing: -0.3px; }
+.lead { color: var(--muted); margin: 0 0 20px; font-size: 17px; }
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px 18px;
+  margin-bottom: 16px;
+}
+.card h2 { font-size: 16px; margin: 0 0 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.card ul { margin: 0; padding-left: 20px; }
+.card li { margin: 4px 0; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0; }
+.label { min-width: 110px; color: var(--muted); }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg button, .btn {
+  font: inherit; font-size: 15px; color: var(--ink); background: transparent;
+  border: 0; padding: 7px 12px; cursor: pointer;
+}
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--card); }
+.btn { border: 1px solid var(--line); border-radius: 8px; }
+.btn:hover, .seg button:hover { outline: 2px solid var(--accent); outline-offset: -2px; }
+select {
+  font: inherit; font-size: 15px; color: var(--ink); background: var(--card);
+  border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px;
+}
+.switch { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+.switch input { width: 18px; height: 18px; accent-color: var(--accent); }
+.links a { margin-right: 14px; }
+.note { font-size: 14px; color: var(--muted); margin-top: 8px; }
+code { font-size: 14px; background: color-mix(in srgb, var(--line) 45%, transparent); padding: 1px 5px; border-radius: 4px; }
+
+/* ---- Inside the e-ink screen: pure black and white, like the panel */
+.panel {
+  position: relative; width: 540px; height: 960px; padding: 16px;
+  background: #FFFFFF; color: #000000;
+  font-family: 'Atkinson Hyperlegible', sans-serif;
+  display: flex; flex-direction: column; overflow: hidden;
+  user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+  touch-action: manipulation;
+}
+.panel button { font: inherit; color: #000; -webkit-tap-highlight-color: transparent; }
+.panel button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.touch .panel button, .touch .panel .tz {
+  outline: 3px dashed #E8590C; outline-offset: -3px;
+  box-shadow: inset 0 0 0 999px rgba(232,89,12,.14);
+}
+.top { height: 48px; flex: none; display: flex; align-items: center; justify-content: space-between; padding: 0 4px; }
+.title { display: flex; align-items: center; gap: 10px; }
+.title h2 { margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.2px; }
+.back { height: 48px; border: 0; background: transparent; padding: 0 16px 0 0; display: flex; align-items: center; gap: 8px; font-size: 20px; font-weight: 700; cursor: pointer; }
+.status { display: flex; align-items: center; gap: 4px; padding: 4px 6px; border-radius: 8px; }
+.status .upd { font-size: 15px; padding-right: 12px; }
+.status .pct { font-size: 20px; font-weight: 700; }
+.content { flex: 1; min-height: 0; margin-top: 8px; }
+.col { display: flex; flex-direction: column; }
+.room-row {
+  width: 100%; height: 61px; border: 2px solid #000; border-radius: 10px;
+  padding: 0 10px 0 16px; display: flex; align-items: center; gap: 14px;
+  background: #fff; text-align: left; cursor: pointer;
+}
+.ico { width: 28px; height: 28px; flex: none; display: flex; align-items: center; justify-content: center; }
+.txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.name { font-size: 20px; font-weight: 700; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sub { font-size: 16px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pill { flex: none; border-radius: 10px; display: flex; align-items: center; justify-content: center; border: 2px solid #000; background: #fff; }
+.pill.on { background: #000; }
+.bulb { width: 72px; height: 48px; }
+.spk { height: 96px; border: 2px solid #000; border-radius: 10px; display: flex; align-items: stretch; background: #fff; overflow: hidden; }
+.tick { width: 64px; flex: none; border: 0; background: transparent; padding: 0; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.box { width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center; border: 2px solid #000; background: #fff; }
+.box.on { background: #000; }
+.box.dim { border-width: 1px; }
+.spk-main { flex: 1; min-width: 0; border: 0; background: transparent; padding: 0 10px 0 0; display: flex; align-items: center; gap: 12px; text-align: left; cursor: pointer; }
+.spk-main:disabled { cursor: default; }
+.play { width: 72px; height: 56px; }
+.play.none { border: 0; }
+.hint { font-size: 20px; font-weight: 700; padding: 10px 4px 0; }
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.pl { min-width: 0; height: 60px; border: 2px solid #000; border-radius: 10px; padding: 0 12px; display: flex; align-items: center; gap: 10px; background: #fff; text-align: left; cursor: pointer; }
+.pl span { flex: 1; min-width: 0; font-size: 20px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vol { height: 64px; border: 2px solid #000; border-radius: 10px; padding: 0 8px; display: flex; align-items: center; justify-content: space-between; }
+.vb { width: 80px; height: 48px; border: 2px solid #000; border-radius: 10px; background: #fff; padding: 0; font-size: 26px; font-weight: 700; cursor: pointer; }
+.vmid { display: flex; flex-direction: column; align-items: center; }
+.vmid .l { font-size: 16px; }
+.vmid .v { font-size: 26px; font-weight: 700; line-height: 1.1; }
+.wide { width: 100%; height: 60px; border: 2px solid #000; border-radius: 10px; padding: 0 16px; display: flex; align-items: center; gap: 14px; background: #fff; text-align: left; cursor: pointer; }
+.wide span { flex: 1; font-size: 20px; font-weight: 700; }
+.room-title { margin: 0 4px 12px; font-size: 28px; font-weight: 700; letter-spacing: -0.2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.light { border: 2px solid #000; border-radius: 10px; display: flex; flex-direction: column; overflow: hidden; }
+.light-top { height: 54px; flex: none; border: 0; background: #fff; padding: 6px 10px 0 16px; display: flex; align-items: center; gap: 14px; text-align: left; cursor: pointer; }
+.bri { flex: 1; border: 0; background: #fff; padding: 12px 10px 10px 16px; display: flex; cursor: pointer; }
+.bar { flex: 1; height: 40px; border: 2px solid #000; border-radius: 8px; padding: 4px; background: #fff; display: flex; }
+.fill { display: block; height: 100%; border-radius: 4px; background: #000; }
+.scene { min-width: 0; height: 56px; border: 2px solid #000; border-radius: 10px; padding: 0 10px; font-size: 20px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; background: #fff; }
+.scene.lit { background: #000; color: #fff !important; }
+.tabs { height: 64px; flex: none; margin-top: 10px; display: flex; gap: 8px; }
+.tab { flex: 1; height: 64px; border: 2px solid #000; border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 20px; font-weight: 700; cursor: pointer; padding: 0; background: #fff; }
+.tab.on { background: #000; color: #fff !important; }
+.off { position: absolute; inset: 0; background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 48px; text-align: center; }
+.off .t { font-size: 28px; font-weight: 700; }
+.off .x { font-size: 20px; font-weight: 700; line-height: 1.3; }
+.off .i { font-size: 16px; }
+</style>
+</head>
+<body>
+<main class="page">
+  <header class="intro">
+    <h1>M5Paper S3 Home Assistant panel</h1>
+    <p class="lead">A clickable mock-up of the e-ink control panel: room lights with brightness and scenes, and Sonos speakers with playlists, volume and zone grouping. Nothing here talks to a real home.</p>
+  </header>
+  <div class="device-wrap">
+    <div class="device" aria-label="M5Paper S3 screen (clickable demo)">
+      <div class="screen-box" id="screenBox">
+        <div class="screen" id="screen"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="side">
+
+    <div class="card">
+      <h2>Try it</h2>
+      <ul>
+        <li><b>Tap</b> a room to switch all its lights on or off.</li>
+        <li><b>Hold</b> a room for 0.6 s to open its lights, then tap a light or tap along its bar to set the brightness (10&nbsp;% steps).</li>
+        <li>Kitchen and Living Room also have <b>scenes</b>.</li>
+        <li>On <b>Sonos</b>, tick rooms on the left, then use a playlist, the volume buttons or "Saml alle zoner" (group all zones).</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>Demo controls</h2>
+      <div class="row">
+        <span class="label">Open a room</span>
+        <select id="roomPick" aria-label="Open a room's lights"></select>
+      </div>
+      <div class="row">
+        <span class="label">Screen</span>
+        <span class="seg" role="group" aria-label="Screen state">
+          <button type="button" data-screen="normal" aria-pressed="true">Normal</button>
+          <button type="button" data-screen="off" aria-pressed="false">Powered off</button>
+          <button type="button" data-screen="batteryEmpty" aria-pressed="false">Battery empty</button>
+        </span>
+      </div>
+      <div class="row">
+        <label class="switch"><input type="checkbox" id="touchToggle"> Show touch areas</label>
+        <label class="switch"><input type="checkbox" id="sleepToggle"> Asleep</label>
+      </div>
+      <div class="row"><button type="button" class="btn" id="resetBtn">Reset demo</button></div>
+      <p class="note">Touch areas are outlined in orange. "Powered off" is what the e-ink keeps showing after the panel switches itself off.</p>
+    </div>
+
+    <div class="card">
+      <h2>The real panel</h2>
+      <ul>
+        <li>ESPHome firmware with LVGL on the 4.7" 540×960 e-ink, pure black and white for fast refreshes (~0.25 s).</li>
+        <li>Up to 12 areas, each with 6 lights, 4 scenes and temperature / humidity / CO₂, all set from Home Assistant.</li>
+        <li>Sleeps with Wi-Fi off; a tap or picking it up wakes it, and taps made while it reconnects are queued.</li>
+      </ul>
+      <p class="links" style="margin:10px 0 0"><a href="https://github.com/simonvdidriksen-code/m5-paper-s3---homeassistant-controller-sonos">Source on GitHub</a></p>
+    </div>
+  </div>
+</main>
+
+<script>
+(() => {
+  'use strict';
+
+  // ---------------------------------------------------------------- icons
+  const svg = (w, body, extra = '') =>
+    `<svg width="${w}" height="${w}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ${extra}>${body}</svg>`;
+  const ICONS = {
+    Fridge: svg(28, '<rect x="5" y="2" width="14" height="20" rx="2"/><path d="M5 10h14"/><path d="M8.5 5v2.5"/><path d="M8.5 13v4"/>'),
+    Sofa: svg(28, '<path d="M4 11V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3"/><path d="M2 13a2 2 0 0 1 4 0v2h12v-2a2 2 0 0 1 4 0v5H2z"/><path d="M4 18v2"/><path d="M20 18v2"/>'),
+    Bed: svg(28, '<path d="M2 5v14"/><path d="M2 15h20v4"/><path d="M22 15v-3a3 3 0 0 0-3-3h-8v6"/><circle cx="6.5" cy="11.5" r="2"/>'),
+    Toilet: svg(28, '<rect x="4" y="3" width="6" height="8" rx="1"/><path d="M4 11h16v1a6 6 0 0 1-6 6h-1l1 3H8l1-3.5A6 6 0 0 1 4 12z"/>'),
+    Chair: svg(28, '<rect x="7" y="3" width="10" height="8" rx="2"/><path d="M5 13h14"/><path d="M12 13v5"/><path d="M7 21l5-3 5 3"/>'),
+    Washer: svg(28, '<rect x="4" y="2" width="16" height="20" rx="2"/><circle cx="12" cy="13" r="5"/><path d="M8 6h.01"/><path d="M11 6h5"/>'),
+    Garage: svg(28, '<path d="M3 21V9l9-5 9 5v12"/><path d="M7 21v-9h10v9"/><path d="M7 15h10"/><path d="M7 18h10"/>'),
+    Area: svg(28, '<rect x="4" y="4" width="16" height="16" rx="1"/><path d="M4 12l8-8"/><path d="M4 20L20 4"/><path d="M12 20l8-8"/>')
+  };
+  const HOME = svg(26, '<path d="M3 11l9-7 9 7"/><path d="M5 10v10h5v-6h4v6h5V10"/>', 'stroke-width="2"');
+  const SPEAKERS = svg(26, '<rect x="2.5" y="4" width="8" height="16" rx="1.5"/><circle cx="6.5" cy="14" r="2.5"/><path d="M6.5 8.5h.01"/><rect x="13.5" y="4" width="8" height="16" rx="1.5"/><circle cx="17.5" cy="14" r="2.5"/><path d="M17.5 8.5h.01"/>');
+  const BACK = svg(28, '<path d="M19 12H5"/><path d="M11 6l-6 6 6 6"/>', 'stroke-width="2"');
+  const BULB_ON = '<svg width="26" height="26" viewBox="0 0 24 24" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.5a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5a6 6 0 0 0-4-10.5z"/><path d="M9.5 18.5h5" fill="none"/><path d="M10.5 21h3" fill="none"/></svg>';
+  const BULB_OFF = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.5a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5a6 6 0 0 0-4-10.5z"/><path d="M9.5 18.5h5"/><path d="M10.5 21h3"/><path d="M3 3l18 18"/></svg>';
+  const CHECK = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+  const PAUSE = '<svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="4.5" width="4" height="15" rx="1" fill="#FFFFFF"/><rect x="14" y="4.5" width="4" height="15" rx="1" fill="#FFFFFF"/></svg>';
+  const PLAY = '<svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l12.5-7.5z" fill="#000000"/></svg>';
+  const RADIO = svg(28, '<rect x="3" y="8" width="18" height="12" rx="2"/><path d="M6 8l10-5"/><circle cx="8.5" cy="14" r="2.5"/><path d="M14 12h4"/><path d="M14 16h4"/>');
+  const LIST = svg(28, '<path d="M3 6h12"/><path d="M3 11h12"/><path d="M3 16h7"/><path d="M17 18V6l4 2"/><circle cx="14.5" cy="18" r="2.5"/>');
+  const UNLINK = svg(28, '<path d="M9 17H7a5 5 0 0 1 0-10h2"/><path d="M15 7h2a5 5 0 0 1 4 8"/><path d="M3 3l18 18"/>');
+  const LINK = svg(28, '<path d="M9 17H7a5 5 0 0 1 0-10h2"/><path d="M15 7h2a5 5 0 0 1 0 10h-2"/><path d="M8 12h8"/>');
+  const POWER = '<svg width="96" height="96" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 3v8"/><path d="M6.3 6.8a8 8 0 1 0 11.4 0"/></svg>';
+  const BATT_EMPTY = '<svg width="96" height="96" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="4" width="10" height="18" rx="1.5"/><path d="M10 2h4" stroke-linecap="round"/><path d="M12 8.5v6" stroke-linecap="round" stroke-width="2.2"/><path d="M12 18v.1" stroke-linecap="round" stroke-width="2.6"/></svg>';
+  const BATT = '<svg width="26" height="26" viewBox="0 0 24 24" role="img" aria-label="Battery 35%"><rect x="7" y="4" width="10" height="18" rx="1.5" fill="none" stroke="#000000" stroke-width="1.8"/><rect x="10" y="2" width="4" height="2" fill="#000000"/><rect x="9" y="14.5" width="6" height="5.5" fill="#000000"/></svg>';
+
+  // ---------------------------------------------------------------- demo data (as on the real panel)
+  const ROOMS = [
+    { id: 'kitchen', name: 'Kitchen', sub: '21.8 °C · 47%', icon: 'Fridge',
+      lights: ['Køkken spots', 'Spisebord køkken'], scenes: ['Køkken 50/50', 'Aftensmad', 'Køkken morgen'] },
+    { id: 'living', name: 'Living Room', sub: '22.8 °C · 47%', icon: 'Sofa',
+      lights: ['Stue lights effective', 'Stue bord lampe', 'Stue gulv lampe', 'Stander lampe'], scenes: ['Normal stue', 'Hygge', 'Stue amme scene'] },
+    { id: 'bedroom', name: 'sove værelse', sub: '21.7 °C · 48.6% · 443 ppm', icon: 'Bed',
+      lights: ['Soveværelse leklint', 'Soveværelse loft lampe White', 'Soveværelse loft lampe Rgb'] },
+    { id: 'bath', name: 'badeværelse stort', sub: '22 °C · 58%', icon: 'Toilet', lights: ['Badeværelse stort spots'] },
+    { id: 'office', name: 'kontor', sub: '23.1 °C · 39% · 597 ppm', icon: 'Chair', lights: ['Kontor loft lampe White', 'Kontor loft lampe Rgb'] },
+    { id: 'utility', name: 'bryggers', sub: '21 °C · 51%', icon: 'Washer', lights: ['Bryggers loft'] },
+    { id: 'room1', name: 'værelse 1 vejen', sub: '20.2 °C · 52%', icon: 'Bed', lights: ['Værelse 1 vejen pære', 'Værelse 1 vejen bord lampe'] },
+    { id: 'room2', name: 'værelse 2 have', sub: '20.9 °C · 53%', icon: 'Bed', lights: ['Værelse 2 haven pære'] },
+    { id: 'hall', name: 'entre', sub: '21.4 °C · 51%', icon: 'Area', lights: ['Entre', 'Entre spots'] },
+    { id: 'garage', name: 'garage', sub: '20.2 °C · 55%', icon: 'Garage', lights: ['Garage', 'Garage paneler'] },
+    { id: 'terrace', name: 'terrasse baghave', sub: '', icon: 'Area', lights: ['Lys udhæng tresse'] },
+    { id: 'drive', name: 'indkørsel', sub: '', icon: 'Area', lights: ['Lys udhæng indkørsel'] }
+  ];
+  const SPEAKER_LIST = [
+    { id: 'kitchen', name: 'kitchen' },
+    { id: 'living', name: 'Living Room' },
+    { id: 'bath', name: 'Bathroom' },
+    { id: 'kontor', name: 'kontor', unavailable: true }
+  ];
+  const PLAYLISTS = [
+    { name: 'epaper playlist 1', now: 'epaper playlist 1', channel: 'Spotify' },
+    { name: 'epaper playlist 2', now: 'epaper playlist 2', channel: 'Spotify' },
+    { name: 'epaper playlist 3', now: 'epaper playlist 3', channel: 'Spotify' },
+    { name: 'DR P3', now: 'DR P3', channel: '', radio: true }
+  ];
+
+  const fresh = () => ({
+    page: 'areas',
+    room: 'living',
+    lights: {
+      'living:1': { on: true, pct: 40 },
+      'living:3': { on: true, pct: 70 },
+      'living:0': { on: false, pct: 50 },
+      'bath:0': { on: true, pct: 60 },
+      'office:0': { on: true, pct: 80 }
+    },
+    lit: null,
+    sel: { kitchen: true, living: true },
+    member: { kitchen: 'g1', living: 'g1', bath: 'g1', kontor: null },
+    groups: { g1: { playing: true, now: 'Desperado · Annika', channel: 'DR P3' } },
+    vol: { kitchen: 0.25, living: 0.25, bath: 0.25 },
+    hint: null,
+    screen: 'normal',
+    asleep: false
+  });
+  let st = fresh();
+  const set = (patch) => { st = { ...st, ...(typeof patch === 'function' ? patch(st) : patch) }; render(); };
+
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const avail = SPEAKER_LIST.filter((s) => !s.unavailable);
+  const anyOn = (r) => r.lights.some((_, i) => st.lights[r.id + ':' + i]?.on);
+  const roomById = (id) => ROOMS.find((r) => r.id === id) ?? ROOMS[1];
+  const allGrouped = () => avail.length >= 2 && avail.every((s) => st.member[s.id] && st.member[s.id] === st.member[avail[0].id]);
+  const hhmm = () => { const d = new Date(); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); };
+
+  // ---------------------------------------------------------------- views
+  function header() {
+    let left;
+    if (st.page === 'room') left = `<button type="button" class="back" data-act="areas" aria-label="Back to Areas">${BACK}<span>Areas</span></button>`;
+    else if (st.page === 'sonos') left = `<div class="title">${SPEAKERS}<h2>Sonos</h2></div>`;
+    else left = `<div class="title">${HOME}<h2>Areas</h2></div>`;
+    const upd = (st.asleep ? 'Sover · opdateret ' : 'Opdateret ') + hhmm();
+    return `<div class="top">${left}<div class="status tz"><div class="upd">${upd}</div>${BATT}<div class="pct">35%</div></div></div>`;
+  }
+
+  function areasView() {
+    return `<div class="col" style="gap:6px">` + ROOMS.map((r) => {
+      const on = anyOn(r);
+      return `<button type="button" class="room-row" data-room="${r.id}" aria-pressed="${on}" aria-label="${on ? 'Turn off' : 'Turn on'} lights in ${esc(r.name)} (hold to open)">
+        <div class="ico">${ICONS[r.icon]}</div>
+        <div class="txt"><div class="name">${esc(r.name)}</div>${r.sub ? `<div class="sub">${esc(r.sub)}</div>` : ''}</div>
+        <span class="pill bulb ${on ? 'on' : ''}" aria-hidden="true">${on ? BULB_ON : BULB_OFF}</span>
+      </button>`;
+    }).join('') + `</div>`;
+  }
+
+  function roomView() {
+    const r = roomById(st.room);
+    const scenes = r.scenes ?? [];
+    // Same fitting rule as the firmware: 6 lights and 4 scenes share the
+    // screen, so the light rows get lower when they would not fit
+    const srows = Math.ceil(scenes.length / 2);
+    const sceneH = scenes.length ? 8 + 25 + 8 + srows * 56 + (srows - 1) * 8 + 6 : 0;
+    const avail = 960 - 32 - 48 - 8 - 74 - 50;  // screen minus padding, header, tabs, title
+    const h = Math.min(120, Math.floor((avail - sceneH - (r.lights.length - 1) * 6) / r.lights.length));
+    const lights = r.lights.map((name, i) => {
+      const key = r.id + ':' + i;
+      const l = st.lights[key] ?? { on: false, pct: null };
+      const pct = l.pct ?? 0;
+      const state = l.on ? (pct ? 'Tændt · ' + pct + ' %' : 'Tændt') : 'Slukket';
+      return `<div class="light" style="height:${h}px">
+        <button type="button" class="light-top" data-light="${i}" aria-pressed="${!!l.on}" aria-label="${l.on ? 'Turn off' : 'Turn on'} ${esc(name)}">
+          <div class="txt"><div class="name">${esc(name)}</div><div class="sub">${state}</div></div>
+          <span class="pill bulb ${l.on ? 'on' : ''}" aria-hidden="true">${l.on ? BULB_ON : BULB_OFF}</span>
+        </button>
+        <button type="button" class="bri" data-bri="${i}" aria-label="Brightness of ${esc(name)}: ${l.on ? pct + ' %' : 'off'}. Tap where it should be.">
+          <span class="bar" aria-hidden="true"><span class="fill" style="width:${l.on ? pct : 0}%"></span></span>
+        </button>
+      </div>`;
+    }).join('');
+    const sceneHtml = scenes.length ? `<div style="font-size:20px;font-weight:700;padding:16px 4px 8px">Scener</div>
+      <div class="grid2">${scenes.map((n) => `<button type="button" class="scene ${st.lit === n ? 'lit' : ''}" data-scene="${esc(n)}" aria-label="Activate scene ${esc(n)}">${esc(n)}</button>`).join('')}</div>` : '';
+    return `<h3 class="room-title">${esc(r.name)}</h3><div class="col" style="gap:6px">${lights}</div>${sceneHtml}`;
+  }
+
+  function sonosView() {
+    const size = (g) => avail.filter((s) => st.member[s.id] === g).length;
+    const spk = SPEAKER_LIST.map((s) => {
+      const un = !!s.unavailable;
+      const g = st.member[s.id];
+      const grp = g ? st.groups[g] : null;
+      const playing = !un && !!grp?.playing;
+      const loaded = !un && !!grp?.now;
+      const n = g ? size(g) : 0;
+      const sel = !!st.sel[s.id];
+      let status = 'Ikke tilgængelig';
+      if (!un) {
+        status = playing ? 'Afspiller' : (loaded ? 'Pause' : 'Klar');
+        if (st.vol[s.id] !== undefined) status += ' · ' + Math.round(st.vol[s.id] * 100) + ' %';
+        if (loaded && grp.channel) status += ' · ' + grp.channel;
+        if (n > 1) status += ' · gruppe på ' + n;
+      }
+      return `<div class="spk">
+        <button type="button" class="tick" data-sel="${s.id}" aria-pressed="${sel}" aria-label="${sel ? 'Untick' : 'Tick'} ${esc(s.name)} for playlists and volume">
+          <span class="box ${sel ? 'on' : ''} ${un ? 'dim' : ''}" aria-hidden="true">${sel ? CHECK : ''}</span>
+        </button>
+        <button type="button" class="spk-main" data-play="${s.id}" ${un ? 'disabled' : ''} aria-pressed="${playing}" aria-label="${un ? esc(s.name) + ' is unavailable' : (playing ? 'Pause ' : 'Play ') + esc(s.name)}">
+          <div class="txt" style="gap:3px"><div class="name">${esc(s.name)}</div>${loaded ? `<div class="sub">${esc(grp.now)}</div>` : ''}<div class="sub">${status}</div></div>
+          <span class="pill play ${playing ? 'on' : ''} ${un ? 'none' : ''}" aria-hidden="true">${playing ? PAUSE : (un ? '' : PLAY)}</span>
+        </button>
+      </div>`;
+    }).join('');
+    const ticked = avail.filter((s) => st.sel[s.id] && st.vol[s.id] !== undefined);
+    const volText = ticked.length ? Math.round(ticked.reduce((a, s) => a + st.vol[s.id], 0) / ticked.length * 100) + ' %' : '--';
+    const grouped = allGrouped();
+    return `<div class="col" style="gap:8px">${spk}
+      <div class="hint">${esc(st.hint ?? 'Afspil på valgte rum')}</div>
+      <div class="grid2">${PLAYLISTS.map((p, i) => `<button type="button" class="pl" data-pl="${i}" aria-label="Play ${esc(p.name)} on the ticked rooms">${p.radio ? RADIO : LIST}<span>${esc(p.name)}</span></button>`).join('')}</div>
+      <div class="vol">
+        <button type="button" class="vb" data-vol="-5" aria-label="Volume down 5 %">-5</button>
+        <button type="button" class="vb" data-vol="-2" aria-label="Volume down 2 %">-2</button>
+        <div class="vmid"><div class="l">Lydstyrke</div><div class="v">${volText}</div></div>
+        <button type="button" class="vb" data-vol="2" aria-label="Volume up 2 %">+2</button>
+        <button type="button" class="vb" data-vol="5" aria-label="Volume up 5 %">+5</button>
+      </div>
+      <button type="button" class="wide" data-act="combine">${grouped ? UNLINK : LINK}<span>${grouped ? 'Opdel alle zoner' : 'Saml alle zoner'}</span></button>
+    </div>`;
+  }
+
+  function offView() {
+    const flat = st.screen === 'batteryEmpty';
+    return `<div class="off" role="status">${flat ? BATT_EMPTY : POWER}
+      <div class="t">${flat ? 'Batteriet er fladt' : 'Slukket'}</div>
+      <div class="x">${flat ? 'Sæt USB-C i for at oplade, og tryk så på knappen på siden for at tænde.' : 'Tryk på knappen på siden for at tænde.'}</div>
+      <div class="i">Slukket kl. ${hhmm()} · batteri ${flat ? 0 : 35} %</div></div>`;
+  }
+
+  const screen = document.getElementById('screen');
+  function render() {
+    const body = st.page === 'sonos' ? sonosView() : st.page === 'room' ? roomView() : areasView();
+    const areasOn = st.page !== 'sonos';
+    screen.innerHTML = `<div class="panel">${header()}<div class="content">${body}</div>
+      <nav class="tabs" aria-label="Pages">
+        <button type="button" class="tab ${areasOn ? 'on' : ''}" data-act="areas" aria-pressed="${areasOn}">${HOME}<span>Areas</span></button>
+        <button type="button" class="tab ${!areasOn ? 'on' : ''}" data-act="sonos" aria-pressed="${!areasOn}">${SPEAKERS}<span>Sonos</span></button>
+      </nav>${st.screen !== 'normal' ? offView() : ''}</div>`;
+    document.querySelectorAll('[data-screen]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.screen === st.screen)));
+    document.getElementById('sleepToggle').checked = st.asleep;
+    document.getElementById('roomPick').value = st.page === 'room' ? st.room : '';
+  }
+
+  // ---------------------------------------------------------------- actions (same rules as the firmware)
+  const setLight = (key, patch) => set((s) => ({ lights: { ...s.lights, [key]: { ...(s.lights[key] ?? { on: false, pct: null }), ...patch } } }));
+  const picked = (s) => avail.filter((x) => s.sel[x.id]).map((x) => x.id);
+
+  function toggleRoom(id) {
+    const r = roomById(id);
+    set((s) => {
+      const was = r.lights.some((_, i) => s.lights[r.id + ':' + i]?.on);
+      const l2 = { ...s.lights };
+      r.lights.forEach((_, i) => { const k = r.id + ':' + i; l2[k] = { pct: null, ...l2[k], on: !was }; });
+      return { lights: l2 };
+    });
+  }
+  function stepVolume(delta) {
+    set((s) => {
+      const ids = picked(s);
+      if (!ids.length) return { hint: 'Vælg mindst ét rum ovenfor' };
+      const v = { ...s.vol };
+      ids.forEach((id) => { v[id] = Math.max(0, Math.min(1, Math.round((v[id] ?? 0) * 100 + delta) / 100)); });
+      return { vol: v, hint: null };
+    });
+  }
+  function playPlaylist(pl) {
+    set((s) => {
+      const ids = picked(s);
+      if (!ids.length) return { hint: 'Vælg mindst ét rum ovenfor' };
+      const gid = 'p' + Date.now();
+      const touched = new Set(ids.map((id) => s.member[id]).filter(Boolean));
+      const member = { ...s.member }, groups = { ...s.groups };
+      avail.forEach((x) => {
+        if (ids.includes(x.id)) member[x.id] = gid;
+        else if (touched.has(s.member[x.id])) {  // split off: stops, on its own
+          member[x.id] = 'solo-' + x.id;
+          groups['solo-' + x.id] = { playing: false, now: '', channel: '' };
+        }
+      });
+      groups[gid] = { playing: true, now: pl.now, channel: pl.channel };
+      return { member, groups, hint: null };
+    });
+  }
+  function combine() {
+    set((s) => {
+      const member = { ...s.member }, groups = { ...s.groups };
+      if (allGrouped()) {  // split: the first speaker keeps the music, the rest stop
+        avail.slice(1).forEach((x) => { member[x.id] = 'solo-' + x.id; groups['solo-' + x.id] = { playing: false, now: '', channel: '' }; });
+      } else {
+        const lead = avail.find((x) => s.groups[s.member[x.id]]?.playing) ?? avail[0];
+        avail.forEach((x) => { member[x.id] = s.member[lead.id]; });
+      }
+      return { member, groups };
+    });
+  }
+
+  // Taps and the 0.6 s hold on a room row (a hold opens the room; the click
+  // that follows it is ignored, as on the panel)
+  let holdT = null, held = false;
+  screen.addEventListener('pointerdown', (e) => {
+    const row = e.target.closest('[data-room]');
+    if (!row) return;
+    clearTimeout(holdT);
+    held = false;
+    holdT = setTimeout(() => { held = true; set({ page: 'room', room: row.dataset.room, lit: null }); }, 600);
+  });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach((t) => screen.addEventListener(t, () => clearTimeout(holdT)));
+  screen.addEventListener('contextmenu', (e) => e.preventDefault());
+
+  let litT = null;
+  screen.addEventListener('click', (e) => {
+    const el = e.target.closest('button');
+    if (!el || el.disabled) return;
+    const d = el.dataset;
+    if (d.room) { if (held) { held = false; return; } toggleRoom(d.room); }
+    else if (d.act === 'areas') set({ page: 'areas' });
+    else if (d.act === 'sonos') set({ page: 'sonos' });
+    else if (d.act === 'combine') combine();
+    else if (d.light !== undefined) {
+      const key = st.room + ':' + d.light;
+      setLight(key, { on: !(st.lights[key]?.on) });
+    } else if (d.bri !== undefined) {
+      // Where you tap along the bar sets it, in 10 % steps; the margin
+      // around the bar counts too (keyboard: next step up)
+      const key = st.room + ':' + d.bri;
+      const l = st.lights[key] ?? { on: false, pct: null };
+      let level;
+      if (e.detail > 0) {
+        const box = el.firstElementChild.getBoundingClientRect();
+        level = Math.ceil((e.clientX - box.left) / Math.max(1, box.width) * 10);
+      } else {
+        level = (l.on ? Math.round((l.pct ?? 0) / 10) : 0) % 10 + 1;
+      }
+      setLight(key, { on: true, pct: Math.max(1, Math.min(10, level)) * 10 });
+    } else if (d.scene) {
+      clearTimeout(litT);
+      set({ lit: d.scene });
+      litT = setTimeout(() => set({ lit: null }), 2000);
+    } else if (d.sel) set((s) => ({ sel: { ...s.sel, [d.sel]: !s.sel[d.sel] }, hint: null }));
+    else if (d.play) {
+      const g = st.member[d.play];
+      if (g) set((s) => ({ groups: { ...s.groups, [g]: { ...s.groups[g], playing: !s.groups[g].playing } } }));
+    } else if (d.pl !== undefined) playPlaylist(PLAYLISTS[+d.pl]);
+    else if (d.vol) stepVolume(+d.vol);
+  });
+
+  // ---------------------------------------------------------------- demo controls
+  const pick = document.getElementById('roomPick');
+  pick.innerHTML = '<option value="">Choose…</option>' + ROOMS.map((r) => `<option value="${r.id}">${esc(r.name)}</option>`).join('');
+  pick.addEventListener('change', () => { if (pick.value) set({ page: 'room', room: pick.value, lit: null }); });
+  document.querySelectorAll('[data-screen]').forEach((b) => b.addEventListener('click', () => set({ screen: b.dataset.screen })));
+  const touch = document.getElementById('touchToggle');
+  touch.addEventListener('change', () => document.body.classList.toggle('touch', touch.checked));
+  document.getElementById('sleepToggle').addEventListener('change', (e) => set({ asleep: e.target.checked }));
+  document.getElementById('resetBtn').addEventListener('click', () => { st = fresh(); render(); });
+
+  // ---------------------------------------------------------------- scale the 540 x 960 screen to fit
+  const box = document.getElementById('screenBox');
+  function fit() {
+    const narrow = window.innerWidth <= 860;
+    const maxW = Math.min(540, window.innerWidth - 32 - 40);
+    const maxH = narrow ? 960 : Math.max(480, window.innerHeight - 64 - 56);
+    const s = Math.min(maxW / 540, maxH / 960, 1);
+    box.style.width = Math.round(540 * s) + 'px';
+    box.style.height = Math.round(960 * s) + 'px';
+    screen.style.transform = `scale(${s})`;
+  }
+  window.addEventListener('resize', fit);
+  fit();
+  render();
+  setInterval(render, 60000);  // keeps "Opdateret hh:mm" current
+})();
+</script>
+</body>
+</html>
