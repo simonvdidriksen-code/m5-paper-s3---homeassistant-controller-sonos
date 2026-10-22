@@ -54,7 +54,14 @@ On the device page, under **Configuration**, per area 1–12:
 
 An area with nothing set is hidden, and so are empty light and scene places. Changes show on the panel within about a second. New entities make HA reconnect once, about 3 s after the last change, so it subscribes to them.
 
-The playlist buttons are "Playlist button 1–4"; the list to pick from is the Sonos favorites in `fav_options` / `fav_ids` in the YAML (see `sensor.sonos_favorites` in HA).
+## Playlist buttons
+
+"Playlist button 1–4" are text fields: type the name of one of your **Sonos favorites** (as in the Sonos app). The panel reads the favorites from the Sonos integration (`sensor.sonos_favorites`) and plays the matching one through Sonos, so a Spotify integration in Home Assistant is not needed, and new favorites work at once.
+
+- Letter case doesn't matter, and part of a name is enough (`lofi`).
+- `The Voice (2)` picks the second favorite called The Voice; a favorite's id (`FV:2/16`) works too.
+- An empty field hides the button. "Playlist button N icon" picks the playlist or radio icon.
+- A name that matches no favorite shows "Findes ikke i Sonos-favoritter" when pressed.
 
 ## Credits
 

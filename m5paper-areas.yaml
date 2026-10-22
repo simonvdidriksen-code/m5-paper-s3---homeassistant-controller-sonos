@@ -61,9 +61,8 @@ substitutions:
   beep_hz: "4000"
   beep_ms: "30"
 
-  # ---- Sonos favorites on the playlist buttons (see sensor.sonos_favorites in HA)
-  # The four buttons are picked in HA ("Playlist button 1" to "4"); the list
-  # to pick from is fav_options below, with the matching ids in fav_ids
+  # ---- Sonos favorites on the playlist buttons: typed in HA ("Playlist
+  # button 1" to "4"), matched to sensor.sonos_favorites by name
 
 esphome:
   name: ${name}
@@ -1073,64 +1072,101 @@ text:
     entity_category: config
     on_value: *area_cfg_changed
 
-# What the four playlist buttons on the Sonos page play: any of your Sonos
-# favorites (sensor.sonos_favorites in HA, incl. DR P3). Same order as fav_ids /
-# fav_radio in globals; a new favorite needs adding there and here.
-select:
+  # Playlist buttons (see the selects below)
   - platform: template
-    id: pl_sel0
+    id: pl_name0
     name: "Playlist button 1"
     icon: mdi:playlist-music
-    entity_category: config
+    mode: text
+    max_length: 100
+    initial_value: "alt det gode"
     optimistic: true
     restore_value: true
-    initial_option: "epaper playlist 1"
-    options: &fav_options
-      - "epaper playlist 1"
-      - "epaper playlist 2"
-      - "epaper playlist 3"
-      - "DR P3"
-      - "alt det gode"
-      - "Just Soft"
-      - "lofi hip hop music - beats to relax/study to"
-      - "Radio Silkeborg 107.7 (Top 40 & Pop Music)"
-      - "Radio VLR"
-      - "The Voice"
-      - "The Voice (2)"
-      - "Women"
-      - "Ss"
-    on_value: &fav_changed
+    entity_category: config
+    on_value: &pl_changed
       - script.execute: pl_labels
   - platform: template
-    id: pl_sel1
+    id: pl_name1
     name: "Playlist button 2"
     icon: mdi:playlist-music
-    entity_category: config
+    mode: text
+    max_length: 100
+    initial_value: "epaper playlist 1"
     optimistic: true
     restore_value: true
-    initial_option: "epaper playlist 2"
-    options: *fav_options
-    on_value: *fav_changed
+    entity_category: config
+    on_value: *pl_changed
   - platform: template
-    id: pl_sel2
+    id: pl_name2
     name: "Playlist button 3"
     icon: mdi:playlist-music
-    entity_category: config
+    mode: text
+    max_length: 100
+    initial_value: "Women"
     optimistic: true
     restore_value: true
-    initial_option: "epaper playlist 3"
-    options: *fav_options
-    on_value: *fav_changed
+    entity_category: config
+    on_value: *pl_changed
   - platform: template
-    id: pl_sel3
+    id: pl_name3
     name: "Playlist button 4"
     icon: mdi:radio
+    mode: text
+    max_length: 100
+    initial_value: "DR P3"
+    optimistic: true
+    restore_value: true
+    entity_category: config
+    on_value: *pl_changed
+
+# What the four playlist buttons on the Sonos page play: type the name of one
+# of your Sonos favorites (as in the Sonos app; sensor.sonos_favorites in HA)
+# in "Playlist button 1" to "4". The panel reads the favorites from HA, so new
+# ones work at once. Letter case doesn't matter; part of a name will do
+# ("lofi"); "The Voice (2)" is the second favorite named The Voice; a favorite's
+# id ("FV:2/16") works too. Empty = no button. "Playlist button N icon" picks
+# the playlist or radio icon.
+select:
+  - platform: template
+    id: pl_icon0
+    name: "Playlist button 1 icon"
+    icon: mdi:shape
     entity_category: config
     optimistic: true
     restore_value: true
-    initial_option: "DR P3"
-    options: *fav_options
-    on_value: *fav_changed
+    initial_option: "Playlist"
+    options: ["Playlist", "Radio"]
+    on_value: *pl_changed
+  - platform: template
+    id: pl_icon1
+    name: "Playlist button 2 icon"
+    icon: mdi:shape
+    entity_category: config
+    optimistic: true
+    restore_value: true
+    initial_option: "Playlist"
+    options: ["Playlist", "Radio"]
+    on_value: *pl_changed
+  - platform: template
+    id: pl_icon2
+    name: "Playlist button 3 icon"
+    icon: mdi:shape
+    entity_category: config
+    optimistic: true
+    restore_value: true
+    initial_option: "Playlist"
+    options: ["Playlist", "Radio"]
+    on_value: *pl_changed
+  - platform: template
+    id: pl_icon3
+    name: "Playlist button 4 icon"
+    icon: mdi:shape
+    entity_category: config
+    optimistic: true
+    restore_value: true
+    initial_option: "Radio"
+    options: ["Playlist", "Radio"]
+    on_value: *pl_changed
   # Area icons (the area settings above)
   - platform: template
     id: a1_icon
@@ -1541,19 +1577,16 @@ globals:
   - id: pl_split
     type: bool
     initial_value: "false"
-  # Sonos favorite ids and "is a radio station" (radio icon), in the order of
-  # the playlist buttons' options (fav_options)
-  - id: fav_ids
-    type: "std::array<const char *, 13>"
-    initial_value: |-
-      std::array<const char *, 13>{
-        "FV:2/14", "FV:2/13", "FV:2/15", "FV:2/12", "FV:2/4", "FV:2/5", "FV:2/3",
-        "FV:2/0", "FV:2/1", "FV:2/10", "FV:2/9", "FV:2/8", "SQ:0"}
-  - id: fav_radio
-    type: "std::array<bool, 13>"
-    initial_value: |-
-      std::array<bool, 13>{false, false, false, true, false, false, false,
-                           true, true, true, true, false, false}
+  # Sonos favorites as HA lists them (sensor.sonos_favorites): id and title,
+  # and which one each playlist button matches (-1 = none / not known yet)
+  - id: fav_items
+    type: "std::vector<std::pair<std::string, std::string>>"
+  - id: favs_known
+    type: bool
+    initial_value: "false"
+  - id: fav_pick
+    type: "std::array<int8_t, 4>"
+    initial_value: "std::array<int8_t, 4>{-1, -1, -1, -1}"
 
 time:
   - platform: homeassistant
@@ -1849,6 +1882,43 @@ text_sensor:
       name: "IP address"
       icon: mdi:ip-network
       entity_category: diagnostic
+
+  # Sonos favorites for the playlist buttons. HA sends the attribute as Python
+  # text: {'FV:2/4': 'alt det gode', 'SQ:0': 'Ss', ...}
+  - platform: homeassistant
+    id: sonos_favs
+    entity_id: sensor.sonos_favorites
+    attribute: items
+    internal: true
+    on_value:
+      - lambda: |-
+          std::vector<std::pair<std::string, std::string>> items;
+          size_t i = 0;
+          // next quoted string ('...' or "..."), with Python's backslash escapes
+          auto next = [&](std::string &out) -> bool {
+            while (i < x.size() && x[i] != '\'' && x[i] != '"') i++;
+            if (i >= x.size()) return false;
+            const char q = x[i++];
+            out.clear();
+            while (i < x.size() && x[i] != q) {
+              if (x[i] == '\\' && i + 1 < x.size()) i++;
+              out += x[i++];
+            }
+            i++;
+            return true;
+          };
+          std::string key, title;
+          while (next(key) && next(title)) items.emplace_back(key, title);
+          id(fav_items) = std::move(items);
+          id(favs_known) = true;
+      - script.execute: pl_labels
+      # a playlist button pressed before the favorites were in: play it now
+      - lambda: |-
+          if (id(fav_queue) >= 0 && id(states_fresh)) {
+            const int q = id(fav_queue);
+            id(fav_queue) = -1;
+            id(play_fav).execute(q);
+          }
 
   # Sonos: state + what's playing + group, per speaker
   # (on_raw_value fires on every state HA sends, also an unchanged one: it tells
@@ -2379,12 +2449,12 @@ script:
           // Re-read HA once the devices have reacted
           if (lights) id(resync_lights).execute();
           if (speakers) id(resync_sonos).execute();
-      - if:
-          condition:
-            lambda: "return id(fav_queue) >= 0;"
-          then:
-            - script.execute: { id: play_fav, idx: !lambda "return id(fav_queue);" }
-            - lambda: id(fav_queue) = -1;
+      - lambda: |-
+          if (id(fav_queue) >= 0) {
+            const int q = id(fav_queue);
+            id(fav_queue) = -1;
+            id(play_fav).execute(q);
+          }
       - if:
           condition:
             lambda: "return id(combine_queue);"
@@ -3225,12 +3295,14 @@ script:
                 id(ink_want) |= 1;
                 id(ink_fast).execute();
 
-  # Nothing ticked: say so for a few seconds
-  - id: show_pick_hint
+  # A short message above the playlist buttons for a few seconds
+  - id: show_hint
     mode: restart
+    parameters:
+      msg: string
     then:
       - lambda: |-
-          lv_label_set_text(id(lbl_pl_hint), "Vælg mindst ét rum ovenfor");
+          lv_label_set_text(id(lbl_pl_hint), msg.c_str());
           id(ink_want) |= 1;
           id(ink_fast).execute();
       - delay: 4s
@@ -3238,6 +3310,11 @@ script:
           lv_label_set_text(id(lbl_pl_hint), "Afspil på valgte rum");
           id(ink_want) |= 1;
           id(ink_bg).execute();
+
+  # Nothing ticked: say so
+  - id: show_pick_hint
+    then:
+      - script.execute: { id: show_hint, msg: "Vælg mindst ét rum ovenfor" }
 
   # Playlist / radio button: play a Sonos favorite on the ticked rooms. The
   # first ticked room leads; the other ticked rooms join it; rooms that were
@@ -3248,13 +3325,13 @@ script:
     then:
       - if:
           condition:
-            lambda: "return millis() >= id(input_block_until);"
+            lambda: |-
+              text::Text *nm[4] = {id(pl_name0), id(pl_name1), id(pl_name2), id(pl_name3)};
+              return millis() >= id(input_block_until) && !nm[idx]->state.empty();
           then:
             - lambda: |-
-                // The favorite this button is set to in HA
-                select::Select *sel[4] = {id(pl_sel0), id(pl_sel1), id(pl_sel2), id(pl_sel3)};
-                const auto ai = sel[idx]->active_index();
-                const size_t fi = (ai.has_value() && *ai < id(fav_ids).size()) ? *ai : (size_t) idx;
+                // The favorite this button matches (pl_labels works it out)
+                const int pick = id(fav_pick)[idx];
                 text_sensor::TextSensor *grp[4] = {id(sn0_group), id(sn1_group), id(sn2_group), id(sn3_group)};
                 auto add = [](std::string &list, const char *e) {
                   if (!list.empty()) list += ",";
@@ -3282,13 +3359,22 @@ script:
                 id(pl_members) = members;
                 id(pl_unjoin) = unjoin;
                 id(pl_unjoin_mask) = unjoin_mask;
-                id(pl_fav) = id(fav_ids)[fi];
+                id(pl_fav) = pick >= 0 ? id(fav_items)[pick].first : std::string();
             - if:
                 condition:
                   lambda: "return id(pl_master).empty();"
                 then:
                   - script.execute: show_pick_hint
-                else:
+            # The name isn't (or is no longer) one of the Sonos favorites
+            - if:
+                condition:
+                  lambda: "return !id(pl_master).empty() && id(favs_known) && id(pl_fav).empty();"
+                then:
+                  - script.execute: { id: show_hint, msg: "Findes ikke i Sonos-favoritter" }
+            - if:
+                condition:
+                  lambda: "return !id(pl_master).empty() && !(id(favs_known) && id(pl_fav).empty());"
+                then:
                   # Show it right away: ticked rooms play, split-off rooms stop
                   - lambda: |-
                       const uint32_t until = millis() + (id(states_fresh) ? 6000 : 120000);
@@ -3303,10 +3389,11 @@ script:
                   - lambda: |-
                       id(ink_want) |= 1;
                       id(ink_fast).execute();
-                  # Until HA is ready for commands (just after connecting too), queue it
+                  # Until HA is ready for commands (just after connecting too) and
+                  # its favorites are in, queue it
                   - if:
                       condition:
-                        lambda: "return !id(states_fresh);"
+                        lambda: "return !id(states_fresh) || !id(favs_known);"
                       then:
                         - lambda: id(fav_queue) = idx;
                       else:
@@ -3342,19 +3429,72 @@ script:
                               media_content_id: !lambda "return id(pl_fav);"
                         - script.execute: resync_sonos
 
-  # Playlist buttons: name and icon of the favorite each is set to in HA
+  # Playlist buttons: match each name from HA to a Sonos favorite, then show
+  # the favorite's name (or the name as typed, until HA has sent the
+  # favorites) and the icon picked in HA. An empty name hides the button.
   - id: pl_labels
     then:
       - lambda: |-
+          text::Text *nm[4] = {id(pl_name0), id(pl_name1), id(pl_name2), id(pl_name3)};
+          select::Select *ic[4] = {id(pl_icon0), id(pl_icon1), id(pl_icon2), id(pl_icon3)};
+          auto trim = [](const std::string &s) {
+            size_t a = 0, b = s.size();
+            while (a < b && isspace((unsigned char) s[a])) a++;
+            while (b > a && isspace((unsigned char) s[b - 1])) b--;
+            return s.substr(a, b - a);
+          };
+          // lower case, also Æ Ø Å É ... (UTF-8 C3 80-9E, not ×)
+          auto fold = [&](const std::string &s) {
+            std::string f = trim(s);
+            for (size_t k = 0; k < f.size(); k++) {
+              const uint8_t c = f[k];
+              if (c >= 'A' && c <= 'Z') f[k] = c + 32;
+              else if (c == 0xC3 && k + 1 < f.size() && (uint8_t) f[k + 1] >= 0x80 &&
+                       (uint8_t) f[k + 1] <= 0x9E && (uint8_t) f[k + 1] != 0x97) {
+                f[k + 1] += 0x20;
+                k++;
+              }
+            }
+            return f;
+          };
+          const auto &items = id(fav_items);
+          for (int i = 0; i < 4; i++) {
+            const std::string name = trim(nm[i]->state);
+            int pick = -1;
+            if (!name.empty()) {
+              const std::string want = fold(name);
+              // the favorite's id ("FV:2/16"), else its name
+              for (size_t k = 0; k < items.size() && pick < 0; k++)
+                if (items[k].first == name || fold(items[k].second) == want) pick = k;
+              // "The Voice (2)": the second favorite with that name
+              const size_t p = name.rfind(" (");
+              const int nth = (p != std::string::npos && name.back() == ')') ? atoi(name.c_str() + p + 2) : 0;
+              if (pick < 0 && nth >= 1) {
+                const std::string base = fold(name.substr(0, p));
+                int seen = 0;
+                for (size_t k = 0; k < items.size() && pick < 0; k++)
+                  if (fold(items[k].second) == base && ++seen == nth) pick = k;
+              }
+              // part of a name ("lofi")
+              for (size_t k = 0; k < items.size() && pick < 0; k++)
+                if (fold(items[k].second).find(want) != std::string::npos) pick = k;
+            }
+            id(fav_pick)[i] = pick;
+          }
           if (id(pl_txt0) == nullptr) return;  // screen not built yet (settings restored at boot)
-          select::Select *sel[4] = {id(pl_sel0), id(pl_sel1), id(pl_sel2), id(pl_sel3)};
+          lv_obj_t *btn[4] = {id(pl_btn0), id(pl_btn1), id(pl_btn2), id(pl_btn3)};
           lv_obj_t *txt[4] = {id(pl_txt0), id(pl_txt1), id(pl_txt2), id(pl_txt3)};
           lv_obj_t *ico[4] = {id(pl_ico0), id(pl_ico1), id(pl_ico2), id(pl_ico3)};
           for (int i = 0; i < 4; i++) {
-            const auto ai = sel[i]->active_index();
-            const size_t fi = (ai.has_value() && *ai < id(fav_ids).size()) ? *ai : (size_t) i;
-            lv_label_set_text(txt[i], sel[i]->option_at(fi));
-            lv_label_set_text(ico[i], id(fav_radio)[fi] ? "\U000F0439" : "\U000F0CB8");
+            const std::string name = trim(nm[i]->state);
+            if (name.empty()) lv_obj_add_flag(btn[i], LV_OBJ_FLAG_HIDDEN);
+            else lv_obj_remove_flag(btn[i], LV_OBJ_FLAG_HIDDEN);
+            const int pick = id(fav_pick)[i];
+            const std::string shown = pick >= 0 ? items[pick].second : name;
+            if (shown != lv_label_get_text(txt[i])) lv_label_set_text(txt[i], shown.c_str());
+            const auto ai = ic[i]->active_index();
+            const char *g = (ai.has_value() && *ai == 1) ? "\U000F0439" : "\U000F0CB8";
+            if (strcmp(g, lv_label_get_text(ico[i])) != 0) lv_label_set_text(ico[i], g);
           }
           if (id(current_page) == 1 && !id(sleeping)) {
             id(ink_want) |= 1;
@@ -4755,6 +4895,7 @@ lvgl:
                   layout: { type: FLEX, flex_flow: ROW_WRAP, pad_row: 8, pad_column: 8 }
                   widgets:
                     - obj:
+                        id: pl_btn0
                         styles: row_style
                         pad_left: 12
                         width: 250
@@ -4767,6 +4908,7 @@ lvgl:
                           - label: { id: pl_ico0, styles: area_icon, text: "\U000F0CB8" }
                           - label: { id: pl_txt0, styles: area_name, text: "", flex_grow: 1, long_mode: DOT }
                     - obj:
+                        id: pl_btn1
                         styles: row_style
                         pad_left: 12
                         width: 250
@@ -4779,6 +4921,7 @@ lvgl:
                           - label: { id: pl_ico1, styles: area_icon, text: "\U000F0CB8" }
                           - label: { id: pl_txt1, styles: area_name, text: "", flex_grow: 1, long_mode: DOT }
                     - obj:
+                        id: pl_btn2
                         styles: row_style
                         pad_left: 12
                         width: 250
@@ -4791,6 +4934,7 @@ lvgl:
                           - label: { id: pl_ico2, styles: area_icon, text: "\U000F0CB8" }
                           - label: { id: pl_txt2, styles: area_name, text: "", flex_grow: 1, long_mode: DOT }
                     - obj:
+                        id: pl_btn3
                         styles: row_style
                         pad_left: 12
                         width: 250
