@@ -1,3 +1,7 @@
+!!!!Ai generate project !!!
+
+
+
 # M5Paper S3 – Home Assistant controller (lights, scenes, Sonos)
 
 An ESPHome firmware that turns the **M5Stack M5Paper S3** (4.7" 540×960 e-ink, touch) into a battery-powered wall/desk panel for Home Assistant.
