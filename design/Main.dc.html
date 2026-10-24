@@ -104,6 +104,13 @@ button{font:inherit}
 </sc-if>
 </span>
 </button>
+<sc-if value="{{s.canSkip}}" hint-placeholder-val="{{ true }}">
+<button type="button" onClick="{{s.skip}}" aria-label="{{s.skipLabel}}" style="width: 82px; flex: none; border: 0; background: transparent; padding: 0 10px 0 8px; display: flex; align-items: center; justify-content: flex-end; cursor: pointer">
+<span aria-hidden="true" style="{{s.skipStyle}}">
+<svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><path d="M5.5 5.5v13l9.5-6.5z" fill="{{s.skipColor}}"></path><rect x="16" y="5.5" width="2.8" height="13" rx="1" fill="{{s.skipColor}}"></rect></svg>
+</span>
+</button>
+</sc-if>
 </div>
 </sc-for>
 <div style="font-size: 20px; font-weight: 700; padding: 10px 4px 0">{{plHint}}</div>
@@ -184,6 +191,20 @@ button{font:inherit}
 <span>Sonos</span>
 </button>
 </nav>
+<sc-if value="{{isNoha}}" hint-placeholder-val="{{ false }}">
+<div role="alert" style="position: absolute; inset: 0; background: #FFFFFF; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 40px; text-align: center">
+<sc-if value="{{nohaWifi}}" hint-placeholder-val="{{ false }}"><svg width="96" height="96" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 8.5a15 15 0 0 1 5.5-3.3"></path><path d="M11 4.6A15 15 0 0 1 22 8.5"></path><path d="M5 12a10 10 0 0 1 4-2.4"></path><path d="M14.5 9.9A10 10 0 0 1 19 12"></path><path d="M8.5 15.5a5 5 0 0 1 7 0"></path><path d="M12 19.5v.1" stroke-width="2.6"></path><path d="M3 3l18 18"></path></svg></sc-if>
+<sc-if value="{{nohaHa}}" hint-placeholder-val="{{ true }}"><svg width="96" height="96" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7"></path><path d="M5 10v10h14V10"></path><path d="M12 10v4.5"></path><path d="M12 17.5v.1" stroke-width="2.4"></path></svg></sc-if>
+<div style="font-size: 28px; font-weight: 700; line-height: 1.2">{{nohaTitle}}</div>
+<div style="font-size: 20px; font-weight: 700; line-height: 1.3">{{nohaText}}</div>
+<div style="font-size: 16px; line-height: 1.3">{{nohaHint}}</div>
+<div style="font-size: 16px; line-height: 1.3">{{nohaInfo}}</div>
+<div style="display: flex; gap: 16px; padding-top: 12px">
+<button type="button" onClick="{{nohaRetry}}" style="width: 200px; height: 64px; box-sizing: border-box; border: 2px solid #000000; border-radius: 10px; background: #FFFFFF; color: #000000; font-size: 20px; font-weight: 700; cursor: pointer">Prøv igen</button>
+<button type="button" onClick="{{nohaClose}}" style="width: 200px; height: 64px; box-sizing: border-box; border: 2px solid #000000; border-radius: 10px; background: #FFFFFF; color: #000000; font-size: 20px; font-weight: 700; cursor: pointer">Luk</button>
+</div>
+</div>
+</sc-if>
 <sc-if value="{{isOff}}" hint-placeholder-val="{{ false }}">
 <div role="status" style="position: absolute; inset: 0; background: #FFFFFF; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 48px; text-align: center">
 <sc-if value="{{offPower}}" hint-placeholder-val="{{ true }}"><svg width="96" height="96" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 3v8"></path><path d="M6.3 6.8a8 8 0 1 0 11.4 0"></path></svg></sc-if>
@@ -195,7 +216,7 @@ button{font:inherit}
 </sc-if>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props="{&quot;showTouch&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true},&quot;showUpdated&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true},&quot;sleeping&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true},&quot;startPage&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;areas&quot;,&quot;sonos&quot;,&quot;room&quot;],&quot;default&quot;:&quot;areas&quot;},&quot;room&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;kitchen&quot;,&quot;living&quot;,&quot;bedroom&quot;,&quot;bath&quot;,&quot;office&quot;,&quot;utility&quot;,&quot;room1&quot;,&quot;room2&quot;,&quot;hall&quot;,&quot;garage&quot;,&quot;terrace&quot;,&quot;drive&quot;],&quot;default&quot;:&quot;living&quot;},&quot;screen&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;normal&quot;,&quot;off&quot;,&quot;batteryEmpty&quot;],&quot;default&quot;:&quot;normal&quot;},&quot;$preview&quot;:{&quot;width&quot;:540,&quot;height&quot;:960}}">
+<script type="text/x-dc" data-dc-script data-props="{&quot;showTouch&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true},&quot;showUpdated&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true},&quot;sleeping&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true},&quot;startPage&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;areas&quot;,&quot;sonos&quot;,&quot;room&quot;],&quot;default&quot;:&quot;sonos&quot;},&quot;room&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;kitchen&quot;,&quot;living&quot;,&quot;bedroom&quot;,&quot;bath&quot;,&quot;office&quot;,&quot;utility&quot;,&quot;room1&quot;,&quot;room2&quot;,&quot;hall&quot;,&quot;garage&quot;,&quot;terrace&quot;,&quot;drive&quot;],&quot;default&quot;:&quot;living&quot;},&quot;screen&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;normal&quot;,&quot;off&quot;,&quot;batteryEmpty&quot;,&quot;noConnection&quot;,&quot;noWifi&quot;],&quot;default&quot;:&quot;normal&quot;},&quot;$preview&quot;:{&quot;width&quot;:540,&quot;height&quot;:960}}">
 class Component extends DCLogic {
   constructor(props) {
     super(props);
@@ -214,7 +235,10 @@ class Component extends DCLogic {
       sel: { kitchen: true, living: true },
       // Which group each speaker is in, and what each group plays
       member: { kitchen: 'g1', living: 'g1', bath: 'g1', kontor: null },
-      groups: { g1: { playing: true, now: 'Desperado · / Annika', channel: 'DR P3' } },
+      // A playlist plays (tracks from a queue can be skipped; radio can't)
+      groups: { g1: { playing: true, now: 'Jonathan · Kim Larsen', channel: '', track: 0 } },
+      skipLit: null,
+      nohaClosed: false,
       vol: { kitchen: 0.25, living: 0.25, bath: 0.25 },
       hint: null
     };
@@ -222,6 +246,7 @@ class Component extends DCLogic {
   componentWillUnmount() {
     clearTimeout(this.holdT);
     clearTimeout(this.litT);
+    clearTimeout(this.skipT);
   }
   renderVals() {
     const onFill = this.props.onFill ?? '#000000';
@@ -246,12 +271,14 @@ class Component extends DCLogic {
       { id: 'bath', name: 'Bathroom' },
       { id: 'kontor', name: 'kontor', unavailable: true }
     ];
+    // "Playlist button 1-4" in HA: names of Sonos favorites (icon picked there too)
     const playlists = [
-      { name: 'epaper playlist 1', now: 'epaper playlist 1', channel: 'Spotify' },
-      { name: 'epaper playlist 2', now: 'epaper playlist 2', channel: 'Spotify' },
-      { name: 'epaper playlist 3', now: 'epaper playlist 3', channel: 'Spotify' },
-      { name: 'DR P3', now: 'DR P3', channel: '', radio: true }
+      { name: 'alt det gode' },
+      { name: 'epaper playlist 1' },
+      { name: 'Women' },
+      { name: 'DR P3', now: 'DR P3', channel: 'DR P3', radio: true }
     ];
+    const tracks = ['Jonathan · Kim Larsen', 'Midnight City · M83', 'Dancing Queen · ABBA', 'Kvinde min · Gasolin', 'Blinding Lights · The Weeknd'];
     const { member, groups, sel, vol } = this.state;
     const avail = speakers.filter((s) => !s.unavailable);
     const groupOf = (id) => member[id];
@@ -301,7 +328,9 @@ class Component extends DCLogic {
           groups2[solo] = { playing: false, now: '', channel: '' };
         }
       });
-      groups2[gid] = { playing: true, now: pl.now, channel: pl.channel };
+      groups2[gid] = pl.radio
+        ? { playing: true, now: pl.now, channel: pl.channel, radio: true }
+        : { playing: true, now: tracks[0], channel: '', track: 0 };
       return { member: member2, groups: groups2, hint: null };
     });
     const combine = () => this.setState((st) => {
@@ -354,11 +383,28 @@ class Component extends DCLogic {
     // Power-off screen (left on the e-ink while the device is off)
     const screen = this.props.screen ?? 'normal';
     const flat = screen === 'batteryEmpty';
+    // No connection screen: after 30 s without Home Assistant ("No connection
+    // screen after" in HA); "Luk" / "Prøv igen" close it in the design
+    const noha = (screen === 'noConnection' || screen === 'noWifi') && !this.state.nohaClosed;
+    const noWifi = screen === 'noWifi';
 
     return {
       // Touch areas outlined (orange dashes) in the design only
       rootClass: (this.props.showTouch ?? true) ? 'touch' : '',
-      isOff: screen !== 'normal',
+      isOff: screen === 'off' || screen === 'batteryEmpty',
+      isNoha: noha,
+      nohaWifi: noWifi,
+      nohaHa: !noWifi,
+      nohaTitle: noWifi ? 'Ingen Wi-Fi' : 'Ingen forbindelse til Home Assistant',
+      nohaText: noWifi
+        ? 'Panelet kan ikke komme på Wi-Fi, så det kan ikke nå Home Assistant.'
+        : 'Wi-Fi virker, men Home Assistant svarer ikke.',
+      nohaHint: noWifi
+        ? 'Tjek at routeren kører, og at panelet er inden for rækkevidde.'
+        : 'Tjek at Home Assistant kører, og at ESPHome-integrationen er slået til for panelet.',
+      nohaInfo: 'Prøver igen af sig selv · sidst forbundet kl. 14:32 · panel 192.168.1.67',
+      nohaRetry: () => this.setState({ nohaClosed: true }),
+      nohaClose: () => this.setState({ nohaClosed: true }),
       offPower: screen === 'off',
       offBattery: flat,
       offTitle: flat ? 'Batteriet er fladt' : 'Slukket',
@@ -467,6 +513,9 @@ class Component extends DCLogic {
         const loaded = !unavail && !!grp?.now;
         const n = g ? size(g) : 0;
         const isSel = !!sel[s.id];
+        // Next track: only from a queue (playlists), not radio or TV
+        const canSkip = loaded && !grp.radio;
+        const skipLit = this.state.skipLit === s.id;
         let status = 'Ikke tilgængelig';
         if (!unavail) {
           status = playing ? 'Afspiller' : (loaded ? 'Pause' : 'Klar');
@@ -491,6 +540,22 @@ class Component extends DCLogic {
           btnStyle: base + 'width: 72px; height: 56px; ' + (playing
             ? 'background: ' + onFill + '; border: 2px solid ' + onFill + ';'
             : 'background: #FFFFFF; border: ' + (unavail ? '0' : '2px solid #000000') + ';'),
+          canSkip,
+          skipLabel: 'Næste nummer på ' + s.name,
+          skipColor: skipLit ? '#FFFFFF' : '#000000',
+          skipStyle: base + 'width: 64px; height: 56px; ' + (skipLit
+            ? 'background: ' + onFill + '; border: 2px solid ' + onFill + ';'
+            : 'background: #FFFFFF; border: 2px solid #000000;'),
+          // The whole group moves on (as Sonos does); black for 1.5 s
+          skip: () => {
+            clearTimeout(this.skipT);
+            this.setState((st) => {
+              const gr = st.groups[g];
+              const t = ((gr.track ?? 0) + 1) % tracks.length;
+              return { skipLit: s.id, groups: { ...st.groups, [g]: { ...gr, track: t, now: tracks[t], playing: true } } };
+            });
+            this.skipT = setTimeout(() => this.setState({ skipLit: null }), 1500);
+          },
           select: () => this.setState((st) => ({ sel: { ...st.sel, [s.id]: !st.sel[s.id] }, hint: null })),
           toggle: () => { if (!unavail) togglePlay(s.id); }
         };
