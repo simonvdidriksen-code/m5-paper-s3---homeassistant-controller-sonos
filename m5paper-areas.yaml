@@ -1578,6 +1578,15 @@ globals:
   - id: sonos_hold
     type: "std::array<uint32_t, 4>"
     initial_value: "std::array<uint32_t, 4>{}"
+  - id: sonos_skip             # can skip to the next track (playing from a queue)
+    type: "std::array<bool, 4>"
+    initial_value: "std::array<bool, 4>{}"
+  - id: skip_queue             # skips tapped before HA was ready (sent by flush_queue)
+    type: "std::array<uint8_t, 4>"
+    initial_value: "std::array<uint8_t, 4>{}"
+  - id: skip_lit               # skip button shown black for a moment after a tap (-1 = none)
+    type: int
+    initial_value: "-1"
   - id: sonos_vol              # 0..1, NAN = unknown
     type: "std::array<float, 4>"
     initial_value: "std::array<float, 4>{NAN, NAN, NAN, NAN}"
@@ -1983,6 +1992,11 @@ text_sensor:
   - { platform: homeassistant, id: sn3_artist, entity_id: media_player.bedroom, attribute: media_artist, internal: true, on_value: *sonos_changed }
   - { platform: homeassistant, id: sn3_channel, entity_id: media_player.bedroom, attribute: media_channel, internal: true, on_value: *sonos_changed }
   - { platform: homeassistant, id: sn3_group, entity_id: media_player.bedroom, attribute: group_members, internal: true, on_value: *sonos_changed }
+  # What each one plays (track URI): from a queue it can skip; radio and TV can't
+  - { platform: homeassistant, id: sn0_cid, entity_id: media_player.kitchen, attribute: media_content_id, internal: true, on_value: *sonos_changed }
+  - { platform: homeassistant, id: sn1_cid, entity_id: media_player.living_room, attribute: media_content_id, internal: true, on_value: *sonos_changed }
+  - { platform: homeassistant, id: sn2_cid, entity_id: media_player.bathroom, attribute: media_content_id, internal: true, on_value: *sonos_changed }
+  - { platform: homeassistant, id: sn3_cid, entity_id: media_player.bedroom, attribute: media_content_id, internal: true, on_value: *sonos_changed }
 
 sensor:
   # Battery: voltage via a 1:2 divider on GPIO3, smoothed, then mapped to % (LiPo curve)
@@ -2528,6 +2542,7 @@ script:
             id(light_queue).fill(false);
             id(bri_queue).fill(-1);
             id(scene_queue).fill(false);
+            id(skip_queue).fill(0);
           }
           // The screen's guesses now only wait for HA's answer
           for (auto &h : id(hold_until))
@@ -2570,6 +2585,12 @@ script:
               speakers = true;
             }
           id(sonos_queue) = 0;
+          for (int i = 0; i < 4; i++)
+            for (int k = 0; k < id(skip_queue)[i]; k++) {
+              id(skip_send).execute(i);
+              speakers = true;
+            }
+          id(skip_queue).fill(0);
           // Re-read HA once the devices have reacted
           if (lights) id(resync_lights).execute();
           if (speakers) id(resync_sonos).execute();
@@ -3807,6 +3828,7 @@ script:
           text_sensor::TextSensor *artist[4] = {id(sn0_artist), id(sn1_artist), id(sn2_artist), id(sn3_artist)};
           text_sensor::TextSensor *channel[4] = {id(sn0_channel), id(sn1_channel), id(sn2_channel), id(sn3_channel)};
           text_sensor::TextSensor *grp[4] = {id(sn0_group), id(sn1_group), id(sn2_group), id(sn3_group)};
+          text_sensor::TextSensor *cid[4] = {id(sn0_cid), id(sn1_cid), id(sn2_cid), id(sn3_cid)};
           sensor::Sensor *vol[4] = {id(sn0_vol), id(sn1_vol), id(sn2_vol), id(sn3_vol)};
           lv_obj_t *np[4] = {id(sn_np0), id(sn_np1), id(sn_np2), id(sn_np3)};
           lv_obj_t *stl[4] = {id(sn_st0), id(sn_st1), id(sn_st2), id(sn_st3)};
@@ -3817,6 +3839,16 @@ script:
             const bool active = s == "playing" || s == "paused";
             id(sonos_avail)[i] = avail;
             if ((int32_t) (now - id(sonos_hold)[i]) >= 0) id(sonos_playing)[i] = s == "playing";
+            // Skip: only a track from a queue (playlists), not a radio
+            // stream, TV / line-in or nothing at all
+            {
+              const std::string &u = cid[i]->state;
+              bool stream = u.empty();
+              for (const char *pre : {"x-sonosapi-stream:", "x-rincon-mp3radio:", "x-sonos-htastream:",
+                                      "x-rincon-stream:", "aac:", "hls-radio:"})
+                stream |= u.rfind(pre, 0) == 0;
+              id(sonos_skip)[i] = avail && active && !stream;
+            }
             if ((int32_t) (now - id(vol_hold)[i]) >= 0 && !std::isnan(vol[i]->state)) id(sonos_vol)[i] = vol[i]->state;
 
             // What's playing: "Title · Artist" (only while something is loaded)
@@ -3873,6 +3905,58 @@ script:
             id(ink_bg).execute();
           }
 
+  # Skip button: next track on that speaker (a group skips together; Sonos
+  # does that). Before HA is ready (boot, wake) the skip is queued.
+  - id: skip_tap
+    mode: parallel
+    parameters:
+      idx: int
+    then:
+      - if:
+          condition:
+            lambda: "return millis() >= id(input_block_until) && id(sonos_skip)[idx];"
+          then:
+            - lambda: |-
+                id(skip_lit) = idx;
+                if (!id(states_fresh)) {
+                  id(skip_queue)[idx] = std::min(3, id(skip_queue)[idx] + 1);
+                  id(tap_queue_at) = millis();
+                }
+            - if:
+                condition:
+                  lambda: "return id(states_fresh);"
+                then:
+                  - script.execute: { id: skip_send, idx: !lambda "return idx;" }
+                  - script.execute: resync_sonos
+            - script.execute: repaint_sonos
+            - lambda: |-
+                id(ink_want) |= 1;
+                id(ink_fast).execute();
+            - script.execute: skip_unlight
+
+  # ...and back to white after 1.5 s (shares a refresh with the new title)
+  - id: skip_unlight
+    mode: restart
+    then:
+      - delay: 1500ms
+      - lambda: id(skip_lit) = -1;
+      - script.execute: repaint_sonos
+      - lambda: |-
+          if (id(current_page) == 1) {
+            id(ink_want) |= 1;
+            id(ink_bg).execute();
+          }
+
+  - id: skip_send
+    mode: queued
+    parameters:
+      idx: int
+    then:
+      - homeassistant.action:
+          action: media_player.media_next_track
+          data:
+            entity_id: !lambda "return std::string(id(sonos_ents)[idx]);"
+
   # Draw the Sonos controls: ticks, play/pause (black + pause = playing,
   # white + play = not playing, no button = unavailable), volume and group button
   - id: repaint_sonos
@@ -3882,6 +3966,20 @@ script:
           lv_obj_t *ico[4] = {id(sn_ico0), id(sn_ico1), id(sn_ico2), id(sn_ico3)};
           lv_obj_t *chk[4] = {id(sn_chk0), id(sn_chk1), id(sn_chk2), id(sn_chk3)};
           lv_obj_t *mark[4] = {id(sn_mark0), id(sn_mark1), id(sn_mark2), id(sn_mark3)};
+          lv_obj_t *skz[4] = {id(sn_skz0), id(sn_skz1), id(sn_skz2), id(sn_skz3)};
+          lv_obj_t *skb[4] = {id(sn_skip0), id(sn_skip1), id(sn_skip2), id(sn_skip3)};
+          lv_obj_t *ski[4] = {id(sn_skico0), id(sn_skico1), id(sn_skico2), id(sn_skico3)};
+          for (int i = 0; i < 4; i++) {
+            // Skip: shown only while it can skip; black for a moment after a tap
+            const bool can = id(sonos_skip)[i];
+            if (can == lv_obj_has_flag(skz[i], LV_OBJ_FLAG_HIDDEN)) {
+              if (can) lv_obj_remove_flag(skz[i], LV_OBJ_FLAG_HIDDEN);
+              else lv_obj_add_flag(skz[i], LV_OBJ_FLAG_HIDDEN);
+            }
+            const bool lit = id(skip_lit) == i;
+            lv_obj_set_style_bg_color(skb[i], lv_color_hex(lit ? 0x000000 : 0xFFFFFF), LV_PART_MAIN);
+            lv_obj_set_style_text_color(ski[i], lv_color_hex(lit ? 0xFFFFFF : 0x000000), LV_PART_MAIN);
+          }
           float vol_sum = 0;
           int vol_n = 0;
           for (int i = 0; i < 4; i++) {
@@ -4087,6 +4185,7 @@ font:
       - "\U000F0E50" # lightbulb-off-outline (off)
       - "\U000F040A" # play
       - "\U000F03E4" # pause
+      - "\U000F04AD" # skip-next
       - "\U000F012C" # check
       - "\U000F16C7" # wifi-sync (connecting)
   # Power-off screen
@@ -4822,7 +4921,8 @@ lvgl:
               flex_flow: COLUMN
               pad_row: 8
             widgets:
-              # Speaker rows: left part ticks the room, the rest plays/pauses it.
+              # Speaker rows: left part ticks the room, the middle plays/pauses
+              # it, the right end skips to the next track (when it can).
               # ---- 0 kitchen
               - obj:
                   styles: row_style
@@ -4880,6 +4980,26 @@ lvgl:
                               clickable: false
                               widgets:
                                 - label: { id: sn_ico0, styles: bulb_icon, align: CENTER, text: "\U000F040A" }
+                    # Next track (only while it can skip: playing from a queue)
+                    - obj:
+                        id: sn_skz0
+                        styles: plain
+                        width: 82
+                        height: 100%
+                        pad_right: 10
+                        hidden: true
+                        scrollable: false
+                        layout: { type: FLEX, flex_flow: ROW, flex_align_main: END, flex_align_cross: CENTER, flex_align_track: CENTER }
+                        on_press:
+                          - script.execute: { id: skip_tap, idx: 0 }
+                        widgets:
+                          - button:
+                              id: sn_skip0
+                              width: 64
+                              height: 56
+                              clickable: false
+                              widgets:
+                                - label: { id: sn_skico0, styles: bulb_icon, align: CENTER, text: "\U000F04AD" }
 
               # ---- 1 Living Room
               - obj:
@@ -4938,6 +5058,26 @@ lvgl:
                               clickable: false
                               widgets:
                                 - label: { id: sn_ico1, styles: bulb_icon, align: CENTER, text: "\U000F040A" }
+                    # Next track (only while it can skip: playing from a queue)
+                    - obj:
+                        id: sn_skz1
+                        styles: plain
+                        width: 82
+                        height: 100%
+                        pad_right: 10
+                        hidden: true
+                        scrollable: false
+                        layout: { type: FLEX, flex_flow: ROW, flex_align_main: END, flex_align_cross: CENTER, flex_align_track: CENTER }
+                        on_press:
+                          - script.execute: { id: skip_tap, idx: 1 }
+                        widgets:
+                          - button:
+                              id: sn_skip1
+                              width: 64
+                              height: 56
+                              clickable: false
+                              widgets:
+                                - label: { id: sn_skico1, styles: bulb_icon, align: CENTER, text: "\U000F04AD" }
 
               # ---- 2 Bathroom
               - obj:
@@ -4996,6 +5136,26 @@ lvgl:
                               clickable: false
                               widgets:
                                 - label: { id: sn_ico2, styles: bulb_icon, align: CENTER, text: "\U000F040A" }
+                    # Next track (only while it can skip: playing from a queue)
+                    - obj:
+                        id: sn_skz2
+                        styles: plain
+                        width: 82
+                        height: 100%
+                        pad_right: 10
+                        hidden: true
+                        scrollable: false
+                        layout: { type: FLEX, flex_flow: ROW, flex_align_main: END, flex_align_cross: CENTER, flex_align_track: CENTER }
+                        on_press:
+                          - script.execute: { id: skip_tap, idx: 2 }
+                        widgets:
+                          - button:
+                              id: sn_skip2
+                              width: 64
+                              height: 56
+                              clickable: false
+                              widgets:
+                                - label: { id: sn_skico2, styles: bulb_icon, align: CENTER, text: "\U000F04AD" }
 
               # ---- 3 kontor (media_player.bedroom)
               - obj:
@@ -5054,6 +5214,26 @@ lvgl:
                               clickable: false
                               widgets:
                                 - label: { id: sn_ico3, styles: bulb_icon, align: CENTER, text: "\U000F040A" }
+                    # Next track (only while it can skip: playing from a queue)
+                    - obj:
+                        id: sn_skz3
+                        styles: plain
+                        width: 82
+                        height: 100%
+                        pad_right: 10
+                        hidden: true
+                        scrollable: false
+                        layout: { type: FLEX, flex_flow: ROW, flex_align_main: END, flex_align_cross: CENTER, flex_align_track: CENTER }
+                        on_press:
+                          - script.execute: { id: skip_tap, idx: 3 }
+                        widgets:
+                          - button:
+                              id: sn_skip3
+                              width: 64
+                              height: 56
+                              clickable: false
+                              widgets:
+                                - label: { id: sn_skico3, styles: bulb_icon, align: CENTER, text: "\U000F04AD" }
 
               # ---- Playlists + radio (2 x 2): play on the ticked rooms
               - label:

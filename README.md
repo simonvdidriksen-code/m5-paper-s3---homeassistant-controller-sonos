@@ -11,7 +11,7 @@ An ESPHome firmware that turns the **M5Stack M5Paper S3** (4.7" 540×960 e-ink, 
 ## Features
 
 - **Areas page:** up to 12 rooms. A tap switches all of a room's lights on or off; a hold opens the room with every light (on/off and a 10-step brightness bar) and up to 4 scenes. The row shows temperature, humidity and CO₂.
-- **Sonos page:** tick rooms, then play a Sonos favorite or radio station on them, step the volume (−5 / −2 / +2 / +5 %), play/pause, and group or split all zones.
+- **Sonos page:** tick rooms, then play a Sonos favorite or radio station on them, step the volume (−5 / −2 / +2 / +5 %), play/pause, skip to the next track (shown only while a speaker plays from a queue, not radio or TV), and group or split all zones.
 - **Everything is set up from Home Assistant:** names, icons, lights, scenes and sensors per area, the four playlist buttons, sleep and wake behaviour. Nothing needs editing in the YAML for that.
 - **E-ink tuned:** pure black and white, so every refresh uses the fast mode (~0.25 s); LVGL draws straight into the e-ink driver's buffer and only changed rows are refreshed.
 - **Battery friendly:** sleeps with Wi-Fi off after a set time. A tap or picking it up wakes it (~0.3 s to Wi-Fi, ~1.2 s to HA). Taps made while it reconnects are queued and sent once HA is back.
