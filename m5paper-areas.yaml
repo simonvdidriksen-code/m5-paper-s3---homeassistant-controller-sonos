@@ -241,6 +241,18 @@ api:
               id(api_ready) = true;
               id(ha_heard) = false;
               lv_label_set_text(id(conn_icon), "");
+              auto now = id(ha_time).now();
+              if (now.is_valid()) {
+                char hm[8];
+                snprintf(hm, sizeof(hm), "%02d:%02d", now.hour, now.minute);
+                id(ha_last_hm) = hm;
+              }
+              id(noha_dismissed) = false;
+              if (!lv_obj_has_flag(id(noha_screen), LV_OBJ_FLAG_HIDDEN)) {
+                lv_obj_add_flag(id(noha_screen), LV_OBJ_FLAG_HIDDEN);
+                id(ink_want) |= 1;
+                id(ink_fast).execute();
+              }
           # HA takes actions only once it has subscribed to them, which it does
           # just before it sends its states: wait for those (3 s at most), or
           # taps made while connecting get dropped. (Its client asks for actions
@@ -289,6 +301,8 @@ api:
           - lambda: |-
               id(api_ready) = false;
               id(states_fresh) = false;
+              id(noha_since) = millis();
+              id(noha_dismissed) = false;
               // (not while going to sleep: that disconnect is ours, and the
               // screen should keep saying "Sover"; nor for the quick reconnect
               // after new area settings)
@@ -442,6 +456,22 @@ number:
     optimistic: true
     restore_value: true
     mode: slider
+    entity_category: config
+
+  # Awake and no Home Assistant for this long (after a wake, boot or a lost
+  # connection): show the "no connection" screen. 0 = never.
+  - platform: template
+    id: noha_after_s
+    name: "No connection screen after"
+    icon: mdi:lan-disconnect
+    unit_of_measurement: s
+    min_value: 0
+    max_value: 600
+    step: 5
+    initial_value: 30
+    optimistic: true
+    restore_value: true
+    mode: box
     entity_category: config
 
   # Power off: how long to hold the battery (top right); unused while
@@ -1433,6 +1463,15 @@ globals:
   - id: api_ready              # Home Assistant connected
     type: bool
     initial_value: "false"
+  - id: noha_since             # millis() since when HA has been missing (wake, boot, lost)
+    type: uint32_t
+    initial_value: "0"
+  - id: noha_dismissed         # "Luk" on the no-connection screen: not again until the next try
+    type: bool
+    initial_value: "false"
+  - id: ha_last_hm             # when HA last connected ("14:32")
+    type: std::string
+    initial_value: '""'
   - id: last_update_hm
     type: std::string
     initial_value: '""'
@@ -1708,6 +1747,7 @@ interval:
                 then:
                   - script.execute: wake_up
           else:
+            - script.execute: noha_check
             - lambda: |-
                 if (id(motion_thr) <= 0) return;  // motion sensitivity 0 = off
                 uint8_t reg = 0x0C, d[6];
@@ -2257,6 +2297,79 @@ script:
           id(sleeping) = true;
           id(sleep_since) = millis();
 
+  # ================================================================ no connection
+  # Awake and Home Assistant missing for "No connection screen after"
+  # seconds: a screen says so, and whether Wi-Fi or HA is the problem. It
+  # goes as soon as HA is back (on_client_connected), on "Luk", or on the next
+  # wake (a new try). If the panel falls asleep meanwhile, the e-ink keeps
+  # showing it.
+  - id: noha_check
+    then:
+      - lambda: |-
+          const bool shown = !lv_obj_has_flag(id(noha_screen), LV_OBJ_FLAG_HIDDEN);
+          if (!shown) {
+            const float after = id(noha_after_s).state;
+            if (id(api_ready) || id(dozing) || id(noha_dismissed) || std::isnan(after) || after <= 0 ||
+                id(power_off).is_running() || id(go_sleep).is_running() || id(radio_off).is_running() ||
+                millis() - id(noha_since) < (uint32_t) (after * 1000.0f))
+              return;
+          } else if (id(api_ready)) {
+            return;
+          }
+          // Wi-Fi down, or Wi-Fi up and HA not answering
+          const bool wifi = network::is_connected();
+          auto set = [](lv_obj_t *lbl, const char *s) {
+            if (strcmp(lv_label_get_text(lbl), s) == 0) return false;
+            lv_label_set_text(lbl, s);
+            return true;
+          };
+          bool changed = !shown;
+          changed |= set(id(noha_icon), wifi ? "\U000F087B" : "\U000F05AA");
+          changed |= set(id(noha_title), wifi ? "Ingen forbindelse til Home Assistant" : "Ingen Wi-Fi");
+          changed |= set(id(noha_text), wifi ? "Wi-Fi virker, men Home Assistant svarer ikke."
+                                             : "Panelet kan ikke komme på Wi-Fi, så det kan ikke nå Home Assistant.");
+          changed |= set(id(noha_hint), wifi ? "Tjek at Home Assistant kører, og at ESPHome-integrationen er slået til for panelet."
+                                             : "Tjek at routeren kører, og at panelet er inden for rækkevidde.");
+          std::string info = "Prøver igen af sig selv · ";
+          info += id(ha_last_hm).empty() ? std::string("ikke forbundet siden start") : "sidst forbundet kl. " + id(ha_last_hm);
+          info += " · panel ${static_ip}";
+          changed |= set(id(noha_info), info.c_str());
+          if (!shown) lv_obj_remove_flag(id(noha_screen), LV_OBJ_FLAG_HIDDEN);
+          if (changed) {
+            id(ink_want) |= 1;
+            id(ink_fast).execute();
+          }
+
+  # "Luk": hide it until the next try (taps are queued for HA as usual)
+  - id: noha_close
+    then:
+      - lambda: |-
+          id(noha_dismissed) = true;
+          lv_obj_add_flag(id(noha_screen), LV_OBJ_FLAG_HIDDEN);
+          id(ink_want) |= 1;
+          id(ink_fast).execute();
+
+  # "Prøv igen": Wi-Fi off and on (also drops a stale access point
+  # association); the screen comes back if that doesn't help either
+  - id: noha_retry
+    mode: single
+    then:
+      - lambda: |-
+          id(noha_since) = millis();
+          id(noha_dismissed) = false;
+          id(last_activity) = millis();
+          lv_obj_add_flag(id(noha_screen), LV_OBJ_FLAG_HIDDEN);
+          lv_label_set_text(id(conn_icon), "\U000F16C7");
+          id(ink_want) |= 1;
+          id(ink_fast).execute();
+      - delay: 300ms
+      - wifi.disable:
+      - delay: 1s
+      - lambda: |-
+          id(wifi_timing) = true;
+          id(wake_at) = millis();
+      - wifi.enable:
+
   # Woken while staying connected (touch, movement or USB): the screen comes
   # back at once and taps act straight away, as HA never went away
   - id: doze_end
@@ -2287,6 +2400,17 @@ script:
           id(wake_timing) = true;
           id(wifi_timing) = true;
           id(refresh_wake) = reason == 3;
+          // A new try: the "no connection" screen goes until this one fails
+          // too. A tap that woke it was meant for that screen: it only wakes.
+          id(noha_since) = millis();
+          id(noha_dismissed) = false;
+          if (!lv_obj_has_flag(id(noha_screen), LV_OBJ_FLAG_HIDDEN)) {
+            lv_obj_add_flag(id(noha_screen), LV_OBJ_FLAG_HIDDEN);
+            if (reason == 1) {
+              id(input_block_until) = millis() + 1500;
+              id(wake_tap) = true;
+            }
+          }
           if (reason != 3) {
             id(last_activity) = millis();
             // "Waking tap acts" off: the tap that woke the panel only wakes it.
@@ -3973,6 +4097,8 @@ font:
     glyphs:
       - "\U000F0425" # power
       - "\U000F0083" # battery-alert
+      - "\U000F05AA" # wifi-off (no connection screen)
+      - "\U000F087B" # home-alert (no connection screen)
 
 # ---------------------------------------------------------------- screen
 
@@ -4147,6 +4273,57 @@ lvgl:
                 widgets:
                   - label: { text: "\U000F0D38", text_font: font_icons }
                   - label: { text: "Sonos", text_font: font_name }
+
+      # No connection to Home Assistant (noha_check fills it in). Covers and
+      # blocks everything but its two buttons.
+      - obj:
+          id: noha_screen
+          hidden: true
+          x: 0
+          y: 0
+          width: 540
+          height: 960
+          bg_color: 0xFFFFFF
+          bg_opa: COVER
+          border_width: 0
+          radius: 0
+          shadow_opa: TRANSP
+          pad_all: 40
+          scrollable: false
+          layout: { type: FLEX, flex_flow: COLUMN, flex_align_main: CENTER, flex_align_cross: CENTER, flex_align_track: CENTER, pad_row: 18 }
+          widgets:
+            - label: { id: noha_icon, text: "\U000F087B", text_font: font_big_icon, text_color: 0x000000 }
+            - label: { id: noha_title, text: "", text_font: font_title, text_color: 0x000000, text_align: CENTER, width: 100%, long_mode: WRAP }
+            - label: { id: noha_text, text: "", text_font: font_name, text_color: 0x000000, text_align: CENTER, width: 100%, long_mode: WRAP }
+            - label: { id: noha_hint, text: "", text_font: font_sub, text_color: 0x000000, text_align: CENTER, width: 100%, long_mode: WRAP }
+            - label: { id: noha_info, text: "", text_font: font_sub, text_color: 0x000000, text_align: CENTER, width: 100%, long_mode: WRAP }
+            - obj:
+                styles: plain
+                width: 100%
+                height: 64
+                pad_top: 12
+                scrollable: false
+                clickable: false
+                layout: { type: FLEX, flex_flow: ROW, flex_align_main: CENTER, flex_align_cross: CENTER, pad_column: 16 }
+                widgets:
+                  - obj:
+                      styles: vol_btn
+                      width: 200
+                      height: 64
+                      scrollable: false
+                      on_press:
+                        - script.execute: noha_retry
+                      widgets:
+                        - label: { styles: area_name, align: CENTER, text: "Prøv igen" }
+                  - obj:
+                      styles: vol_btn
+                      width: 200
+                      height: 64
+                      scrollable: false
+                      on_press:
+                        - script.execute: noha_close
+                      widgets:
+                        - label: { styles: area_name, align: CENTER, text: "Luk" }
 
       # Power-off screen: drawn just before the power is cut; the e-ink keeps
       # showing it while the device is off. Covers (and blocks) everything.

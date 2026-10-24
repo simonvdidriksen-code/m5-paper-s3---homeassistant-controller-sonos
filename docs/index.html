@@ -187,6 +187,8 @@ code { font-size: 14px; background: color-mix(in srgb, var(--line) 45%, transpar
 .off .t { font-size: 28px; font-weight: 700; }
 .off .x { font-size: 20px; font-weight: 700; line-height: 1.3; }
 .off .i { font-size: 16px; }
+.off .btns { display: flex; gap: 16px; padding-top: 12px; }
+.off .btns button { width: 200px; height: 64px; border: 2px solid #000; border-radius: 10px; background: #fff; font-size: 20px; font-weight: 700; cursor: pointer; }
 </style>
 </head>
 <body>
@@ -227,6 +229,7 @@ code { font-size: 14px; background: color-mix(in srgb, var(--line) 45%, transpar
           <button type="button" data-screen="normal" aria-pressed="true">Normal</button>
           <button type="button" data-screen="off" aria-pressed="false">Powered off</button>
           <button type="button" data-screen="batteryEmpty" aria-pressed="false">Battery empty</button>
+          <button type="button" data-screen="noha" aria-pressed="false">No connection</button>
         </span>
       </div>
       <div class="row">
@@ -234,7 +237,7 @@ code { font-size: 14px; background: color-mix(in srgb, var(--line) 45%, transpar
         <label class="switch"><input type="checkbox" id="sleepToggle"> Asleep</label>
       </div>
       <div class="row"><button type="button" class="btn" id="resetBtn">Reset demo</button></div>
-      <p class="note">Touch areas are outlined in orange. "Powered off" is what the e-ink keeps showing after the panel switches itself off.</p>
+      <p class="note">Touch areas are outlined in orange. "Powered off" is what the e-ink keeps showing after the panel switches itself off. "No connection" appears when Home Assistant can't be reached for 30 s (the time is a setting in HA).</p>
     </div>
 
     <div class="card">
@@ -436,7 +439,21 @@ code { font-size: 14px; background: color-mix(in srgb, var(--line) 45%, transpar
     </div>`;
   }
 
+  const HOME_ALERT = '<svg width="96" height="96" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M12 10v4.5"/><path d="M12 17.5v.1" stroke-width="2.4"/></svg>';
+
+  // No connection to Home Assistant: on the panel after 30 s without HA
+  function nohaView() {
+    return `<div class="off" role="alert">${HOME_ALERT}
+      <div class="t">Ingen forbindelse til Home Assistant</div>
+      <div class="x">Wi-Fi virker, men Home Assistant svarer ikke.</div>
+      <div class="i">Tjek at Home Assistant kører, og at ESPHome-integrationen er slået til for panelet.</div>
+      <div class="i">Prøver igen af sig selv · sidst forbundet kl. ${hhmm()} · panel 192.168.1.67</div>
+      <div class="btns"><button type="button" data-act="noha-retry">Prøv igen</button><button type="button" data-act="noha-close">Luk</button></div>
+    </div>`;
+  }
+
   function offView() {
+    if (st.screen === 'noha') return nohaView();
     const flat = st.screen === 'batteryEmpty';
     return `<div class="off" role="status">${flat ? BATT_EMPTY : POWER}
       <div class="t">${flat ? 'Batteriet er fladt' : 'Slukket'}</div>
@@ -533,6 +550,11 @@ code { font-size: 14px; background: color-mix(in srgb, var(--line) 45%, transpar
     else if (d.act === 'areas') set({ page: 'areas' });
     else if (d.act === 'sonos') set({ page: 'sonos' });
     else if (d.act === 'combine') combine();
+    else if (d.act === 'noha-close') set({ screen: 'normal' });
+    else if (d.act === 'noha-retry') {
+      // the panel turns Wi-Fi off and on and tries again; here it "reconnects"
+      set({ screen: 'normal' });
+    }
     else if (d.light !== undefined) {
       const key = st.room + ':' + d.light;
       setLight(key, { on: !(st.lights[key]?.on) });

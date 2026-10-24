@@ -15,6 +15,7 @@ An ESPHome firmware that turns the **M5Stack M5Paper S3** (4.7" 540×960 e-ink, 
 - **Everything is set up from Home Assistant:** names, icons, lights, scenes and sensors per area, the four playlist buttons, sleep and wake behaviour. Nothing needs editing in the YAML for that.
 - **E-ink tuned:** pure black and white, so every refresh uses the fast mode (~0.25 s); LVGL draws straight into the e-ink driver's buffer and only changed rows are refreshed.
 - **Battery friendly:** sleeps with Wi-Fi off after a set time. A tap or picking it up wakes it (~0.3 s to Wi-Fi, ~1.2 s to HA). Taps made while it reconnects are queued and sent once HA is back.
+- **No connection screen:** if Home Assistant can't be reached for 30 s ("No connection screen after" in HA, 0 = off), the panel says so, tells Wi-Fi problems apart from HA problems, and offers "Prøv igen" (retry) and "Luk" (close). It goes away by itself once HA is back.
 - **Power off** from HA or the battery icon leaves a "Slukket" (off) screen on the e-ink.
 
 ## Files
